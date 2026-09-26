@@ -36,6 +36,8 @@ import { Lesson } from "./student-lesson";
 import { Admin } from "./admin";
 import { DashboardOverview } from "./dashboard-overview";
 import overviewStyles from "./dashboard-overview.module.css";
+import { ProgressSummary, ProgressLessonRow } from "./student-progress";
+import progressStyles from "./student-progress.module.css";
 
 export function Portal() {
   const pathname = usePathname(),
@@ -540,7 +542,13 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
   );
   return (
     <div
-      className={mode === "/dashboard" ? overviewStyles.dashboard : undefined}
+      className={
+        mode === "/dashboard"
+          ? overviewStyles.dashboard
+          : mode === "/progress"
+            ? progressStyles.page
+            : undefined
+      }
     >
       <div className="page-heading">
         <div>
@@ -575,6 +583,13 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
           passed={passed}
           viewed={viewed}
         />
+      ) : mode === "/progress" ? (
+        <ProgressSummary
+          lessons={lessons}
+          completed={completed}
+          passed={passed}
+          viewed={viewed}
+        />
       ) : (
         <section className="stats-grid">
           <Stat
@@ -599,7 +614,11 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
       )}
       <div className="section-heading">
         <h2>
-          {t("course")}
+          {mode === "/progress"
+            ? lang === "ru"
+              ? "Результаты по урокам"
+              : "Сабақтар бойынша нәтижелер"
+            : t("course")}
           <span className="count">{lessons.length}</span>
         </h2>
         <span className="muted">{t("pass")} ≥ 80%</span>
@@ -641,7 +660,11 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
                 {t("week")} {Math.ceil(l.order / 3)}
               </div>
             )}
-            <LessonRow lesson={l} />
+            {mode === "/progress" ? (
+              <ProgressLessonRow lesson={l} />
+            ) : (
+              <LessonRow lesson={l} />
+            )}
           </div>
         ))}
       </motion.div>
