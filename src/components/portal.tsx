@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
   BookOpen,
   Check,
   ChevronRight,
@@ -35,6 +34,8 @@ import type { Lang } from "@/lib/i18n";
 import { Lesson } from "./student-lesson";
 import { Admin } from "./admin";
 import { DashboardOverview } from "./dashboard-overview";
+import { Profile } from "./profile-screen";
+import { LoginScreen } from "./login-screen";
 import overviewStyles from "./dashboard-overview.module.css";
 import { ProgressSummary, ProgressLessonRow } from "./student-progress";
 import progressStyles from "./student-progress.module.css";
@@ -171,39 +172,7 @@ function Shell(p: ShellProps) {
         { href: "/progress", icon: ChartNoAxesCombined, label: t("progress") },
         { href: "/profile", icon: UserRound, label: t("profile") },
       ];
-  if (!p.me)
-    return (
-      <div className="login-page">
-        <div className="login-preferences">{controls}</div>
-        <section className="login-art">
-          <div className="brand-lockup">
-            <img src="/talan-logo.png" alt="TALAN" />
-            <div>
-              <strong>TALAN</strong>
-              <span>BILIM BERU ORTALYĞY</span>
-            </div>
-          </div>
-          <div className="login-title">
-            <span className="eyebrow">{t("grade")}</span>
-            <h1>
-              {p.lang === "ru"
-                ? "Большие цели начинаются с понимания."
-                : "Үлкен мақсат түсінуден басталады."}
-            </h1>
-            <p>
-              {p.lang === "ru"
-                ? "Математика, которая становится понятной. В своём темпе, с поддержкой Талан."
-                : "Түсінікті математика. Өз қарқыныңызбен, Талан қолдауымен."}
-            </p>
-          </div>
-          <MathArt />
-          <span className="login-footer">TALAN EDUCATION · {t("source")}</span>
-        </section>
-        <section className="login-form-wrap">
-          {p.loading ? <Loading /> : <Login />}
-        </section>
-      </div>
-    );
+  if (!p.me) return <LoginScreen controls={controls} loading={p.loading} />;
   return (
     <div className="app-shell">
       <aside className={`sidebar ${p.menu ? "is-open" : ""}`}>
@@ -332,72 +301,6 @@ function Shell(p: ShellProps) {
         <footer className="app-footer">© TALAN · {t("source")}</footer>
       </div>
     </div>
-  );
-}
-function Login() {
-  const { t } = useApp();
-  const [busy, setBusy] = useState(false),
-    [failed, setFailed] = useState(false);
-  return (
-    <form
-      className="login-form"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setBusy(true);
-        setFailed(false);
-        const form = new FormData(e.currentTarget);
-        try {
-          const r = await fetch("/api/auth/sign-in/username", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username: form.get("username"),
-              password: form.get("password"),
-            }),
-          });
-          if (!r.ok) throw new Error();
-          window.location.assign("/dashboard");
-        } catch {
-          setFailed(true);
-          setBusy(false);
-        }
-      }}
-    >
-      <span className="login-mark">
-        <GraduationCap size={26} />
-      </span>
-      <h2>{t("loginTitle")}</h2>
-      <p className="muted">{t("loginHint")}</p>
-      <label>
-        {t("username")}
-        <input
-          name="username"
-          autoComplete="username"
-          required
-          autoFocus
-          placeholder="talan-…"
-        />
-      </label>
-      <label>
-        {t("password")}
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-      </label>
-      {failed && (
-        <p className="error-message" role="alert">
-          {t("loginError")}
-        </p>
-      )}
-      <Button disabled={busy} type="submit">
-        {busy ? t("loading") : t("login")}
-        <ArrowRight size={18} />
-      </Button>
-      <p className="login-help">{t("loginHelp")}</p>
-    </form>
   );
 }
 export function Loading() {
@@ -749,72 +652,5 @@ export function Stat({
         </div>
       )}
     </div>
-  );
-}
-function Profile({ me, onRefresh }: { me: Me; onRefresh: () => void }) {
-  const { t, notify, error } = useApp();
-  const [busy, setBusy] = useState(false);
-  const router = useRouter();
-  return (
-    <>
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">TALAN</span>
-          <h1>{t("account")}</h1>
-        </div>
-      </div>
-      <section className="panel profile-panel">
-        <span className="avatar large">{me.name[0]}</span>
-        <h2>{me.name}</h2>
-        <p className="muted">{me.username}</p>
-        {me.mustChangePassword && <p className="notice">{t("mustChange")}</p>}
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setBusy(true);
-            const form = e.currentTarget,
-              data = new FormData(form);
-            try {
-              await api("password", {
-                currentPassword: data.get("currentPassword"),
-                newPassword: data.get("newPassword"),
-              });
-              form.reset();
-              notify(t("passwordChanged"));
-              onRefresh();
-              router.push(me.role === "ADMIN" ? "/admin" : "/dashboard");
-            } catch (e) {
-              notify(error(e));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <label>
-            {t("currentPassword")}
-            <input
-              name="currentPassword"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </label>
-          <label>
-            {t("newPassword")}
-            <input
-              name="newPassword"
-              type="password"
-              autoComplete="new-password"
-              minLength={12}
-              maxLength={64}
-              required
-            />
-          </label>
-          <Button disabled={busy}>
-            {busy ? t("saving") : t("changePassword")}
-          </Button>
-        </form>
-      </section>
-    </>
   );
 }

@@ -1,0 +1,211 @@
+.page {
+  max-width: 1040px;
+  margin-inline: auto;
+}
+.heading {
+  margin-bottom: var(--space-12);
+}
+.heading h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+.heading p {
+  color: var(--muted);
+  font-size: var(--type-small);
+  line-height: 1.8;
+  margin-top: var(--space-3);
+  max-width: 58ch;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+  gap: var(--space-12);
+  align-items: start;
+}
+.identity {
+  min-width: 0;
+}
+.nameplate {
+  padding: var(--space-8);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface) var(--radius-surface)
+    var(--radius-surface) 3px;
+  background-color: var(--surface);
+  background-image: linear-gradient(
+    to right,
+    var(--pattern-ink) 1px,
+    transparent 1px
+  );
+  background-size: 32px 100%;
+}
+.initial {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 25px;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--accent-soft);
+  margin-bottom: var(--space-6);
+}
+.nameplate > p {
+  color: var(--muted);
+  font-size: var(--type-caption);
+  margin-bottom: var(--space-2);
+}
+.nameplate h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 1rem + 0.7vw, 1.625rem);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.025em;
+  overflow-wrap: anywhere;
+}
+.nameplate dl {
+  margin: var(--space-8) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.nameplate dt {
+  color: var(--muted);
+  font-size: var(--type-caption);
+}
+.nameplate dd {
+  margin: var(--space-2) 0 0;
+  font-size: var(--type-body);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.accountHelp {
+  margin-top: var(--space-4);
+  font-size: var(--type-caption);
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 48ch;
+}
+.passwordSection {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-6);
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.sectionHeading svg {
+  color: var(--muted);
+  flex: none;
+}
+.sectionHeading h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.intro,
+.requiredNotice p {
+  color: var(--muted);
+  font-size: var(--type-small);
+  line-height: 1.8;
+  max-width: 58ch;
+}
+.intro {
+  margin-top: var(--space-3);
+}
+.requiredNotice {
+  margin-top: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: var(--accent-soft);
+}
+.requiredNotice strong {
+  display: block;
+  font-size: var(--type-small);
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+}
+.requiredNotice p {
+  color: var(--text);
+}
+.form {
+  margin-top: var(--space-8);
+}
+.form label {
+  margin-bottom: var(--space-6);
+  font-size: var(--type-small);
+  font-weight: 500;
+  line-height: 1.7;
+}
+.form input {
+  min-height: 48px;
+  font-weight: 400;
+  background: var(--surface);
+  border-radius: var(--radius-control);
+}
+.form input:hover {
+  border-color: var(--muted);
+}
+.form input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.fieldHint {
+  margin-top: -16px;
+  font-size: var(--type-caption);
+  color: var(--muted);
+  line-height: 1.6;
+}
+.actions {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+.actions p {
+  font-size: var(--type-caption);
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: var(--space-4);
+  max-width: 48ch;
+}
+@media (max-width: 1050px) {
+  .layout {
+    gap: var(--space-8);
+  }
+  .nameplate {
+    padding: var(--space-6);
+  }
+}
+@media (max-width: 800px) {
+  .heading {
+    margin-bottom: var(--space-8);
+  }
+  .layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+  }
+  .nameplate {
+    padding: var(--space-6);
+  }
+  .nameplate dl {
+    margin-top: var(--space-6);
+  }
+  .sectionHeading h2 {
+    font-size: 24px;
+  }
+}
+@media (max-width: 480px) {
+  .actions :global(.button) {
+    width: 100%;
+  }
+  .requiredNotice {
+    padding: var(--space-4);
+  }
+}
