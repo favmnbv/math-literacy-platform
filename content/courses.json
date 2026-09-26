@@ -1,0 +1,400 @@
+[
+  {
+    "id": "ru",
+    "title": "Математическая грамотность",
+    "language": "ru",
+    "lessons": [
+      {
+        "id": "ru-01",
+        "order": 1,
+        "title": "Статистика",
+        "videoId": "1BXxkjM5RxOBEOxC9Yl6x16CRFwzu_UtJ"
+      },
+      {
+        "id": "ru-02",
+        "order": 2,
+        "title": "Теория вероятности",
+        "videoId": "1ZIBmIiz90AiihvNsfmk3Euh0MNxu4Rza"
+      },
+      {
+        "id": "ru-03",
+        "order": 3,
+        "title": "Комбинаторика 1",
+        "videoId": "1By8se4rTgrfUWh-yihv3QTXqrUSNBxFe"
+      },
+      {
+        "id": "ru-04",
+        "order": 4,
+        "title": "Комбинаторика: смешанные задачи. Комбинаторика с цифрами",
+        "videoId": "1ng-LuvwMLV8OJ9-12dQ47rdf_ikQg3Xe"
+      },
+      {
+        "id": "ru-05",
+        "order": 5,
+        "title": "Проценты 1",
+        "videoId": "10z87LQ7nVVyvnhiby74ERtyWUI9cb6L_"
+      },
+      {
+        "id": "ru-06",
+        "order": 6,
+        "title": "Проценты 2",
+        "videoId": "1Xd_808mCNigtM573Pl8NiCddS1cxYyyM"
+      },
+      {
+        "id": "ru-07",
+        "order": 7,
+        "title": "Концентрация",
+        "videoId": "1gZ7DgUsu3prPc6qaZcEvqOjlus0BxKIx"
+      },
+      {
+        "id": "ru-08",
+        "order": 8,
+        "title": "Пропорциональность.",
+        "videoId": "1dwbZKo9EeqBMo4rWIKGWrTtfOVfG_GA-"
+      },
+      {
+        "id": "ru-09",
+        "order": 9,
+        "title": "Соотношение. Совместная работа",
+        "videoId": "1Dyp9iUKeDpY-VWMqbYO-KmjlWp0ll8rS"
+      },
+      {
+        "id": "ru-10",
+        "order": 10,
+        "title": "Круги Эйлера",
+        "videoId": "1YGfYFMNl2eZ5UD4sjZbyTvqDIEHHyeYe"
+      },
+      {
+        "id": "ru-11",
+        "order": 11,
+        "title": "Принцип Дирихле",
+        "videoId": "1Xzb903Q9dxS_czRA-b-lh5EJKYZ2wuSQ"
+      },
+      {
+        "id": "ru-12",
+        "order": 12,
+        "title": "Нумерация",
+        "videoId": "1GMwGBu_bkTdmdDBOAJGSj5QIT9HZl1m0"
+      },
+      {
+        "id": "ru-13",
+        "order": 13,
+        "title": "Свойства степени",
+        "videoId": "1zQuHeu0ueeSF1Yn_RiYsD7B8tHLrUn5C"
+      },
+      {
+        "id": "ru-14",
+        "order": 14,
+        "title": "Возраст. Задача со временем. Очередь .",
+        "videoId": "1u2aBdaLcn7jHqvyMklGtpx6tDPvz8zpV"
+      },
+      {
+        "id": "ru-15",
+        "order": 15,
+        "title": "Движение 1",
+        "videoId": "1ZgFPpaHkEDyipc0bNTrMsw7C4TcuoIXR"
+      },
+      {
+        "id": "ru-16",
+        "order": 16,
+        "title": "Движение 2",
+        "videoId": "1unqYPJCYGWDbFj5cYGuHIcXJnOTQvHOu"
+      },
+      {
+        "id": "ru-17",
+        "order": 17,
+        "title": "Баллы. Текстовые задачи  на составление уравнения",
+        "videoId": "1v2tpIy737ppbSkr2_9mX9V_cqbjWyV7L"
+      },
+      {
+        "id": "ru-18",
+        "order": 18,
+        "title": "Закономерность и последовательность",
+        "videoId": "1aNmBtigoDIfugzZ6tlEelh5U-tyYJVkM"
+      },
+      {
+        "id": "ru-19",
+        "order": 19,
+        "title": "Круг и окружность",
+        "videoId": "1NLmXGqzxTBO4_JaJIXBtOevqcpkORDZ-"
+      },
+      {
+        "id": "ru-20",
+        "order": 20,
+        "title": "Треугольник",
+        "videoId": "1rMW5HKJzZytZArDYnTySpj56T1H_zp16"
+      },
+      {
+        "id": "ru-21",
+        "order": 21,
+        "title": "Квадрат и прямоугольник 1",
+        "videoId": "1V0aJhggZc0Al5r0dBONHjb4kyHP1tQ2t"
+      },
+      {
+        "id": "ru-22",
+        "order": 22,
+        "title": "Квадрат и прямоугольник 2",
+        "videoId": "1vYNv1-Jn3XLBoAg9GYgUIfnx8E-g1-XV"
+      },
+      {
+        "id": "ru-23",
+        "order": 23,
+        "title": "Трапеция",
+        "videoId": "154EzdV6Q59MaOMISw0jgVB-zVa7cz_U_"
+      },
+      {
+        "id": "ru-24",
+        "order": 24,
+        "title": "Формула Пика, параллелограмм, ромб",
+        "videoId": "10FTa4RAwqgXWumgDrknn89bpcd5ejtp8"
+      },
+      {
+        "id": "ru-25",
+        "order": 25,
+        "title": "Куб и параллелепипед 1",
+        "videoId": "1y6YLR0TJ098GI_7ZJT2gA8YN3Dr6X2gl"
+      },
+      {
+        "id": "ru-26",
+        "order": 26,
+        "title": "Куб и параллелепипед 2",
+        "videoId": "1cQYfNCLtJVC4Be1NZqBPSKev4QFnWRJI"
+      },
+      {
+        "id": "ru-27",
+        "order": 27,
+        "title": "Цилиндр и шар",
+        "videoId": "1NnwZnQWPPA1s3YvVAKxYAQFrQqeiYElI"
+      },
+      {
+        "id": "ru-28",
+        "order": 28,
+        "title": "Конус и пирамида",
+        "videoId": "11MO0Iutc2CLDerd-tfq4njGNVwwxLMqe"
+      },
+      {
+        "id": "ru-29",
+        "order": 29,
+        "title": "Группирование;\n Головы(носы), ноги(уши);\n сравнение",
+        "videoId": "1p395wOc9OkXL0qWThEqEBVZQjnlObHeG"
+      },
+      {
+        "id": "ru-30",
+        "order": 30,
+        "title": "Тройная пропорция. Масштаб",
+        "videoId": "1V4_pVK8CUDfK5yfrW8uGMV_E6F_Zvh7w"
+      },
+      {
+        "id": "ru-31",
+        "order": 31,
+        "title": "Прогрессии",
+        "videoId": "1AMd5k5QNOjedYRdSLEQyV5rBvh8M-QYV"
+      },
+      {
+        "id": "ru-32",
+        "order": 32,
+        "title": "Функции. ФСУ. Уравнения",
+        "videoId": "1wRjMsQBWr1xQf86TlhzQJywlcqvzoeTv"
+      }
+    ]
+  },
+  {
+    "id": "kk",
+    "title": "Математикалық сауаттылық",
+    "language": "kk",
+    "lessons": [
+      {
+        "id": "kk-01",
+        "order": 1,
+        "title": "Жұп және тақ сандар. Жай сандар. Факториал. Дәрежеге байланысты есептер",
+        "videoId": "1nklIUeqL_kNEvA-2p23JQbETQuya7pQB"
+      },
+      {
+        "id": "kk-02",
+        "order": 2,
+        "title": "Теңдеу мен есептеулер",
+        "videoId": "1XbVuPUtt0tK9mmyqY0VDcaPdWJpzUkOw"
+      },
+      {
+        "id": "kk-03",
+        "order": 3,
+        "title": "Сандық қатынастар. Пропорция",
+        "videoId": "1vmPxNZny4XajNiJR3gnqvuwRYGGuDutt"
+      },
+      {
+        "id": "kk-04",
+        "order": 4,
+        "title": "Оқулық беті. Соңғы цифрді анықтау.",
+        "videoId": "1uk88WQQSdCHclUFVrTXts1SZXfEZpVmd"
+      },
+      {
+        "id": "kk-05",
+        "order": 5,
+        "title": "Масштаб. Венн диаграммасы",
+        "videoId": "1XqKUpfAlSsOCcCKHYKIN67cww3cU50b5"
+      },
+      {
+        "id": "kk-06",
+        "order": 6,
+        "title": "Шаманың бірнеше бөлігі",
+        "videoId": "1r82EN0XrS4vSOlaLZRZdQXhi0iyUYAiy"
+      },
+      {
+        "id": "kk-07",
+        "order": 7,
+        "title": "Арифметикалық орта, медиана, мода және өзгеріс ауқымы (құлашы)",
+        "videoId": "1KMi5b3zS9_pws6EQlb6xv-7gxAWqWagf"
+      },
+      {
+        "id": "kk-08",
+        "order": 8,
+        "title": "Пайыз",
+        "videoId": "1NX9HRqTeOgkm9NNGD7a_kWA_-A4_LzFm"
+      },
+      {
+        "id": "kk-09",
+        "order": 9,
+        "title": "Концентрация",
+        "videoId": "1QH0qAayF2_N06cUrBm50k24-5ZI14Fef"
+      },
+      {
+        "id": "kk-10",
+        "order": 10,
+        "title": "Экономикалық есептер",
+        "videoId": "1QcSvxqnSTh2wawZ530y-p4LIDK7Yhyqg"
+      },
+      {
+        "id": "kk-11",
+        "order": 11,
+        "title": "Заңдылыққа байланысты есептер",
+        "videoId": "119IbwMGHEKHBVmK3kHaVIiYmUEzdEHhq"
+      },
+      {
+        "id": "kk-12",
+        "order": 12,
+        "title": "Жалған монетаны табу және бактерияға байланысты есептер, сәйкестікті анықтау. Шартқа байланысты есептер",
+        "videoId": "16nYWhv349dLNBub0GeIxbroe4bRwYIYe"
+      },
+      {
+        "id": "kk-13",
+        "order": 13,
+        "title": "Бөренеге мен баспалдақ, сатыға байланысты есептер. Сапқа тұру, жарысқа байланысты есептер,  Шеңбер бойына байланысты есептер",
+        "videoId": "1M2INZlEgAvgD3BWpO3plofoorfCXfPeH"
+      },
+      {
+        "id": "kk-14",
+        "order": 14,
+        "title": "Бірайнымалы теңдеулер",
+        "videoId": "1DMMt-KKZlZkZxlR6ujgbPQnOQO2hrWKc"
+      },
+      {
+        "id": "kk-15",
+        "order": 15,
+        "title": "Екіайнымалы теңдеулер",
+        "videoId": "1FgFTvcpoq0uujd5PBmNPWzwg3p2wwBpG"
+      },
+      {
+        "id": "kk-16",
+        "order": 16,
+        "title": "Көпайнымалы және стандартты емес теңдеулер. Бірлескен жұмыс",
+        "videoId": "1yqqRYqStnU33ILfXLmqhbB1ofjdXDgSu"
+      },
+      {
+        "id": "kk-17",
+        "order": 17,
+        "title": "Адам жасына байланысты есептер",
+        "videoId": "13vgBU9nAlmbdsD9j96s8HWBjwc9nYSU2"
+      },
+      {
+        "id": "kk-18",
+        "order": 18,
+        "title": "Қозғалысқа байланысты есептер",
+        "videoId": "16vLdoznNPEnh_RPpgOsLT6-wkxh0pDjC"
+      },
+      {
+        "id": "kk-19",
+        "order": 19,
+        "title": "Ең көп және ең аз шар алу",
+        "videoId": "1WRY2OO7K4v7liKvPaMaspBjSW6ySSTvA"
+      },
+      {
+        "id": "kk-20",
+        "order": 20,
+        "title": "Комбинаторика",
+        "videoId": null
+      },
+      {
+        "id": "kk-21",
+        "order": 21,
+        "title": "Комбинаторика – 2",
+        "videoId": "16YFVMVsr6qQ1rPVuVgXThR1Q2u6O_RbL"
+      },
+      {
+        "id": "kk-22",
+        "order": 22,
+        "title": "Ықтималдылық – 1",
+        "videoId": "1sMi2PFVVnJnmStrSGuKNndjq1P1KWo9y"
+      },
+      {
+        "id": "kk-23",
+        "order": 23,
+        "title": "Ықтималдылық – 2",
+        "videoId": "1UXqONplPwr1qdXNrA-YtfxjF6uWymago"
+      },
+      {
+        "id": "kk-24",
+        "order": 24,
+        "title": "Бұрышқа байланысты есептер",
+        "videoId": "1OnKDuWmrjNWnMMTt_EHTUACPYPWvUdYf"
+      },
+      {
+        "id": "kk-25",
+        "order": 25,
+        "title": "Үшбұрыш",
+        "videoId": "1VK6Y8qGbCTitXlRdjmJf98nXaJ2Cr96o"
+      },
+      {
+        "id": "kk-26",
+        "order": 26,
+        "title": "Квадрат және тіктөртбұрыштар",
+        "videoId": "14k9Xm_lz0baeC91H3-yUAUiWvFdIDgcy"
+      },
+      {
+        "id": "kk-27",
+        "order": 27,
+        "title": "Кез-келген төртбұрыштар мен көпбұрыштар",
+        "videoId": "193nz7I7XEGRYDwCBnPyjoidQY04FYNMT"
+      },
+      {
+        "id": "kk-28",
+        "order": 28,
+        "title": "Шеңбер және дөңгелек",
+        "videoId": "1G6M55li8uB-mNQaD9ktLHVu99PeyVszU"
+      },
+      {
+        "id": "kk-29",
+        "order": 29,
+        "title": "Аралас геометриялық есептер. Бірлік клеткалармен есептеу.",
+        "videoId": null
+      },
+      {
+        "id": "kk-30",
+        "order": 30,
+        "title": "Куб және параллелепипед",
+        "videoId": "18trBgjDGvH8FNDlyBpXCm-BTjUH3KRHq"
+      },
+      {
+        "id": "kk-31",
+        "order": 31,
+        "title": "Кеңістіктегі фигуралар – 1",
+        "videoId": "17LKZX7EmP4GHt78NrENGmfZ04fbUK1tb"
+      },
+      {
+        "id": "kk-32",
+        "order": 32,
+        "title": "Кеңістіктегі фигуралар – 2",
+        "videoId": "1bJO1OIO9vNZnxqUbzk4ye_JEedOigdHh"
+      }
+    ]
+  }
+]

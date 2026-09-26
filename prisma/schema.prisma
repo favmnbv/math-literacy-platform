@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String             @id
+  name               String
+  email              String             @unique
+  emailVerified      Boolean            @default(false)
+  image              String?
+  username           String?            @unique
+  displayUsername    String?
+  role               String             @default("STUDENT")
+  status             String             @default("ACTIVE")
+  mustChangePassword Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  lastActivityAt     DateTime?
+  sessions           Session[]
+  accounts           Account[]
+  enrollments        Enrollment[]
+  lessonProgress     LessonProgress[]
+  homeworkProgress   HomeworkProgress[]
+  submissions        Submission[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model RateLimit {
+  id          String @id @default(cuid())
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+}
+
+model ApiLimit {
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+}
+
+model Course {
+  id          String       @id
+  title       String
+  language    String
+  timezone    String       @default("Asia/Almaty")
+  lessons     Lesson[]
+  cohorts     Cohort[]
+  enrollments Enrollment[]
+}
+
+model Cohort {
+  id          String       @id @default(cuid())
+  name        String
+  courseId    String
+  course      Course       @relation(fields: [courseId], references: [id])
+  startDate   DateTime
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  cohortId  String
+  cohort    Cohort   @relation(fields: [cohortId], references: [id])
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@index([cohortId, status])
+}
+
+model Lesson {
+  id               String           @id
+  courseId         String
+  course           Course           @relation(fields: [courseId], references: [id])
+  order            Int
+  title            String
+  description      String           @default("")
+  videoProvider    String           @default("GOOGLE_DRIVE")
+  videoId          String?
+  status           String           @default("DRAFT")
+  unlockType       String           @default("RELATIVE_TO_COHORT_START")
+  availableFrom    DateTime?
+  unlockOffsetDays Int              @default(0)
+  homework         Homework?
+  progress         LessonProgress[]
+
+  @@unique([courseId, order])
+}
+
+model Homework {
+  id           String             @id
+  lessonId     String             @unique
+  lesson       Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  status       String             @default("DRAFT")
+  passingScore Int                @default(80)
+  maxAttempts  Int                @default(3)
+  revision     Int                @default(1)
+  questions    Question[]
+  progress     HomeworkProgress[]
+  submissions  Submission[]
+}
+
+model Question {
+  id                String   @id @default(cuid())
+  homeworkId        String
+  homework          Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  order             Int
+  level             String   @default("A")
+  type              String   @default("MULTIPLE_CHOICE")
+  text              String
+  options           Json     @default("[]")
+  correctAnswer     String
+  acceptableAnswers Json     @default("[]")
+  tolerance         String   @default("0")
+  points            Int      @default(1)
+  explanation       String   @default("")
+
+  @@unique([homeworkId, order])
+}
+
+model LessonProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId       String
+  lesson         Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  viewedAt       DateTime?
+  lastAccessedAt DateTime  @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+model HomeworkProgress {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeworkId    String
+  homework      Homework  @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  draft         Json      @default("{}")
+  attemptCount  Int       @default(0)
+  bonusAttempts Int       @default(0)
+  bestScore     Int       @default(0)
+  passedAt      DateTime?
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, homeworkId])
+}
+
+model Submission {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeworkId   String
+  homework     Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  attempt      Int
+  requestId    String
+  answers      Json
+  result       Json
+  score        Int
+  earnedPoints Int
+  maxPoints    Int
+  revision     Int
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, homeworkId, requestId])
+  @@unique([userId, homeworkId, attempt])
+  @@index([homeworkId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  entityId  String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
