@@ -1,0 +1,303 @@
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr);
+  gap: var(--space-8);
+  margin: var(--space-12) 0 var(--space-18);
+  align-items: stretch;
+}
+.currentLesson {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8) 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface) var(--radius-surface)
+    var(--radius-surface) 3px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.lessonHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  color: var(--muted);
+}
+.lessonHeading h2 {
+  font: 400 var(--type-small)/var(--leading-ui) var(--font-ui);
+  letter-spacing: 0;
+}
+.lessonHeading > span {
+  font-size: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+.topic {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.75rem, 1.1rem + 1.8vw, 2.625rem);
+  line-height: 1.28;
+  letter-spacing: -0.035em;
+  max-width: 23ch;
+  margin-bottom: var(--space-8);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.topic.longTopic {
+  font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem);
+  max-width: 32ch;
+  letter-spacing: -0.025em;
+}
+.lessonSteps {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+.lessonSteps > div {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: var(--type-caption);
+  min-width: 0;
+  flex: 1;
+}
+.stepIcon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+.stepLine {
+  width: 20px;
+  height: 1px;
+  background: var(--line);
+  flex: none;
+}
+.lessonSteps .done {
+  color: var(--success);
+}
+.done .stepIcon {
+  color: var(--success);
+  border-color: var(--success-line);
+  background: var(--success-bg);
+}
+.lessonAction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+.lessonAction > span {
+  color: var(--muted);
+  font-size: var(--type-caption);
+}
+.pageEdge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 56px;
+  height: 3px;
+  background: var(--accent);
+}
+.progress {
+  padding: var(--space-3) 0;
+  min-width: 0;
+  align-self: center;
+}
+.progressHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.progressHeading svg {
+  color: var(--muted);
+  flex: none;
+}
+.progressHeading h2 {
+  font: 500 var(--type-body)/var(--leading-ui) var(--font-ui);
+  letter-spacing: -0.01em;
+}
+.completionLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: var(--type-small);
+}
+.completionLine strong {
+  font-size: 24px;
+  color: var(--text);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.completionLine strong span {
+  color: var(--muted);
+  font-size: var(--type-body);
+}
+.courseMarks {
+  display: flex;
+  gap: 3px;
+  align-items: end;
+  height: 30px;
+  margin: 14px 0 var(--space-6);
+}
+.courseMarks > span {
+  flex: 1;
+  min-width: 1px;
+  height: 12px;
+  background: var(--line);
+  border-radius: 1px;
+}
+.courseMarks .completeMark {
+  height: 26px;
+  background: var(--success);
+}
+.progressLedger {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.progressLedger > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--line);
+  padding: var(--space-3) 0;
+}
+.progressLedger dt {
+  font-size: var(--type-small);
+  color: var(--muted);
+}
+.progressLedger dd {
+  margin: 0;
+  font-size: var(--type-body);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.progressLedger dd span {
+  color: var(--muted);
+  font-size: var(--type-caption);
+  font-weight: 400;
+}
+.progressNote,
+.emptyCopy {
+  font-size: var(--type-caption);
+  line-height: 1.7;
+  color: var(--muted);
+}
+.progressNote {
+  margin-top: var(--space-4);
+  max-width: 37ch;
+}
+.dashboard :global(.lesson-list) {
+  margin-top: var(--space-8);
+}
+.dashboard :global(.lesson-row) {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  margin-bottom: 0;
+  padding: 20px 0;
+}
+.dashboard :global(a.lesson-row:hover) {
+  background: var(--surface);
+  transform: none;
+}
+.dashboard :global(.lesson-row.disabled) {
+  opacity: 1;
+}
+.dashboard :global(.lesson-row.disabled .lesson-info h3) {
+  color: var(--muted);
+}
+.dashboard :global(.lesson-number) {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 17px;
+  width: 36px;
+  font-variant-numeric: tabular-nums;
+}
+.dashboard :global(.lesson-number.done) {
+  color: var(--success);
+  background: transparent;
+}
+.dashboard :global(.week-label) {
+  font-weight: 500;
+  color: var(--text);
+  font-size: var(--type-small);
+  margin-top: var(--space-8);
+  margin-bottom: 0;
+}
+.dashboard :global(.lesson-info h3) {
+  font-weight: 500;
+  font-size: var(--type-body);
+}
+.dashboard :global(.lesson-meta) {
+  margin-top: 7px;
+}
+.dashboard :global(.course-toolbar) {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+@media (max-width: 1100px) {
+  .overview {
+    grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
+    gap: var(--space-6);
+  }
+  .currentLesson {
+    padding: var(--space-6);
+  }
+  .lessonSteps {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  .stepLine {
+    display: none;
+  }
+}
+@media (max-width: 800px) {
+  .overview {
+    grid-template-columns: 1fr;
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-12);
+    gap: var(--space-8);
+  }
+  .currentLesson {
+    padding: var(--space-6);
+  }
+  .topic {
+    font-size: 30px;
+    margin-bottom: var(--space-6);
+  }
+  .progress {
+    padding: 0 4px;
+  }
+  .progressNote {
+    max-width: none;
+  }
+  .lessonHeading {
+    margin-bottom: var(--space-4);
+  }
+  .lessonAction {
+    gap: var(--space-3);
+  }
+  .dashboard :global(.lesson-info) {
+    min-width: 0;
+  }
+  .dashboard :global(.lesson-trailing) {
+    padding-left: 47px;
+  }
+}

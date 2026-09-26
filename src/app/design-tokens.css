@@ -1,0 +1,87 @@
+/* TALAN / contemporary mathematics workbook.
+   Keep visual decisions here; screen composition is handled separately. */
+:root {
+  --font-ui: "Golos Text Variable", sans-serif;
+  --font-display: "Literata Variable", serif;
+
+  --type-caption: 0.75rem;
+  --type-small: 0.8125rem;
+  --type-body: 0.9375rem;
+  --type-reading: 1rem;
+  --type-section: 1.5rem;
+  --type-title: clamp(1.875rem, 1.4rem + 1.5vw, 2.75rem);
+  --leading-ui: 1.55;
+  --leading-reading: 1.75;
+  --leading-heading: 1.2;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-18: 4.5rem;
+  --page-gutter: clamp(1rem, 3vw, 3rem);
+  --reading-width: 68ch;
+
+  --radius-field: 6px;
+  --radius-control: 8px;
+  --radius-surface: 12px;
+  --radius-dialog: 16px;
+
+  --bg: #eff4f5;
+  --surface: #ffffff;
+  --surface-soft: #e5edef;
+  --text: #143643;
+  --muted: #536d78;
+  --line: #ccd9dd;
+  --accent: #007f88;
+  --accent-hover: #006c74;
+  --accent-soft: #e0f1f1;
+  --on-accent: #ffffff;
+  --nav: var(--text);
+  --success: #26704d;
+  --success-bg: #eef7f0;
+  --success-line: #b7d8c2;
+  --danger: #a83b43;
+  --danger-bg: #fff1f2;
+  --danger-line: #ecc4ca;
+  --pattern-ink: #14364309;
+  --focus-ring: #007f88;
+  --overlay: #14364366;
+  --shadow: 0 12px 32px #14364312, 0 2px 6px #1436430a;
+  --brand-panel: #143643;
+  --on-brand: #f5fafb;
+  --brand-muted: #bfd0d6;
+
+  --duration-press: 100ms;
+  --duration-state: 160ms;
+  --duration-theme: 200ms;
+  --ease-response: cubic-bezier(0.2, 0.7, 0.2, 1);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #102832;
+  --surface: #173440;
+  --surface-soft: #1e3e4b;
+  --text: #edf4f5;
+  --muted: #b3c6cd;
+  --line: #365460;
+  --accent: #70d4d4;
+  --accent-hover: #91e2e2;
+  --accent-soft: #21484f;
+  --on-accent: #102832;
+  --success: #9ad8b5;
+  --success-bg: #1c3b35;
+  --success-line: #3c6654;
+  --danger: #f0a3a6;
+  --danger-bg: #3b2c36;
+  --danger-line: #77505a;
+  --pattern-ink: #cce5e908;
+  --focus-ring: #70d4d4;
+  --overlay: #061b25b3;
+  --shadow: 0 12px 32px #061b2538, 0 2px 6px #061b2528;
+  color-scheme: dark;
+}

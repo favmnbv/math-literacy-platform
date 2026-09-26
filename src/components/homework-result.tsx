@@ -50,7 +50,14 @@ export function HomeworkResult({
           <h2 id="result-title" tabIndex={-1}>
             {ru ? "Результат теста" : "Тест нәтижесі"}
           </h2>
-          <p className="result-outcome">
+          <p
+            className={`result-outcome ${passed ? "outcome-passed" : "outcome-retry"}`}
+          >
+            {passed ? (
+              <Check size={15} aria-hidden="true" />
+            ) : (
+              <X size={15} aria-hidden="true" />
+            )}
             {passed
               ? t("passed")
               : ru

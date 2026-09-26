@@ -31,6 +31,8 @@ import type { CourseView, Me, LessonCard } from "@/lib/types";
 import type { Lang } from "@/lib/i18n";
 import { Lesson } from "./student-lesson";
 import { Admin } from "./admin";
+import { DashboardOverview } from "./dashboard-overview";
+import overviewStyles from "./dashboard-overview.module.css";
 
 export function Portal() {
   const pathname = usePathname(),
@@ -532,7 +534,9 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
         (filter === "done" && l.state === "COMPLETED")),
   );
   return (
-    <>
+    <div
+      className={mode === "/dashboard" ? overviewStyles.dashboard : undefined}
+    >
       <div className="page-heading">
         <div>
           <span className="eyebrow">{course.group}</span>
@@ -558,48 +562,36 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
           </select>
         )}
       </div>
-      {mode === "/dashboard" && (
-        <section className="hero">
-          <div>
-            <span className="eyebrow">{t("hello")}</span>
-            <h2>{t("continue")}</h2>
-            <p>
-              {next
-                ? `${t("lesson")} ${next.order}. ${next.title}`
-                : t("subtitle")}
-            </p>
-            {next && (
-              <Button asChild>
-                <Link href={`/course/${next.id}`}>
-                  {t("start")}
-                  <ArrowRight size={17} />
-                </Link>
-              </Button>
-            )}
-          </div>
-          <MathArt />
+      {mode === "/dashboard" ? (
+        <DashboardOverview
+          lessons={lessons}
+          next={next}
+          completed={completed}
+          passed={passed}
+          viewed={viewed}
+        />
+      ) : (
+        <section className="stats-grid">
+          <Stat
+            icon={<BookOpen />}
+            label={t("completeCount")}
+            value={`${completed} / ${lessons.length}`}
+            percent={(completed / lessons.length) * 100}
+          />
+          <Stat
+            icon={<Target />}
+            label={t("passedCount")}
+            value={`${passed} / ${lessons.length}`}
+            percent={(passed / lessons.length) * 100}
+          />
+          <Stat
+            icon={<Video />}
+            label={t("viewCount")}
+            value={`${viewed} / ${lessons.length}`}
+            percent={(viewed / lessons.length) * 100}
+          />
         </section>
       )}
-      <section className="stats-grid">
-        <Stat
-          icon={<BookOpen />}
-          label={t("completeCount")}
-          value={`${completed} / ${lessons.length}`}
-          percent={(completed / lessons.length) * 100}
-        />
-        <Stat
-          icon={<Target />}
-          label={t("passedCount")}
-          value={`${passed} / ${lessons.length}`}
-          percent={(passed / lessons.length) * 100}
-        />
-        <Stat
-          icon={<Video />}
-          label={t("viewCount")}
-          value={`${viewed} / ${lessons.length}`}
-          percent={(viewed / lessons.length) * 100}
-        />
-      </section>
       <div className="section-heading">
         <h2>
           {t("course")}
@@ -649,7 +641,7 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
         ))}
       </div>
       <p className="muted fine-print">{t("curriculumHelp")}</p>
-    </>
+    </div>
   );
 }
 function LessonRow({ lesson: l }: { lesson: LessonCard }) {
