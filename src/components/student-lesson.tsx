@@ -1,37 +1,56 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   Check,
-  CheckCircle2,
   ExternalLink,
   Send,
   Lock,
   BookOpen,
+  ArrowRight,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { SubmitDialog } from "./ui/submit-dialog";
+import { HomeworkResult } from "./homework-result";
 import { useApp } from "./context";
 import { MathText } from "./math-text";
 import { api } from "@/lib/client";
-import type { LessonView } from "@/lib/types";
+import type { LessonView, SubmissionView } from "@/lib/types";
 import { Loading, ErrorState } from "./portal";
+
 export function Lesson({ id }: { id: string }) {
   const { t, lang, error, notify, date } = useApp();
-  const [lesson, setLesson] = useState<LessonView | null>(null),
-    [failed, setFailed] = useState(""),
-    [answers, setAnswers] = useState<Record<string, string>>({}),
-    [saving, setSaving] = useState(""),
-    [busy, setBusy] = useState(false),
-    [active, setActive] = useState(0),
-    [dirty, setDirty] = useState(false);
-  const requestId = useRef<string | null>(null),
-    saveQueue = useRef(Promise.resolve());
+  const reduced = useReducedMotion();
+  const [lesson, setLesson] = useState<LessonView | null>(null);
+  const [failed, setFailed] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [active, setActive] = useState(0);
+  const [dirty, setDirty] = useState(false);
+  const [review, setReview] = useState<SubmissionView | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [inlineError, setInlineError] = useState("");
+  const requestId = useRef<string | null>(null);
+  const saveQueue = useRef(Promise.resolve());
+  const homeworkRef = useRef<HTMLElement>(null);
+  const submitting = useRef(false);
+  const saveVersion = useRef(0);
+  const hw = lesson?.homework;
+  const p = hw?.progress;
+  const used = p?.attemptCount || 0;
+  const max = (hw?.maxAttempts || 3) + (p?.bonusAttempts || 0);
+  const finished = !!p?.passedAt || used >= max;
+
   async function load() {
     try {
-      const l = await api<LessonView>("lesson", undefined, { id });
-      setLesson(l);
-      setAnswers(l.homework?.progress?.draft || {});
+      const data = await api<LessonView>("lesson", undefined, { id });
+      setLesson(data);
+      setAnswers(data.homework?.progress?.draft || {});
+      setReview(data.homework?.submissions[0] || null);
       setFailed("");
       setDirty(false);
     } catch (e) {
@@ -41,59 +60,91 @@ export function Lesson({ id }: { id: string }) {
   useEffect(() => {
     setLesson(null);
     setActive(0);
+    setReview(null);
+    requestId.current = null;
     void load();
   }, [id]);
-  const hw = lesson?.homework,
-    p = hw?.progress,
-    used = p?.attemptCount || 0,
-    max = (hw?.maxAttempts || 3) + (p?.bonusAttempts || 0),
-    finished = !!p?.passedAt || used >= max;
   useEffect(() => {
-    if (!dirty || !lesson?.homework || finished || busy) return;
+    if (!dirty || !lesson?.viewed || !hw || finished || busy || review) return;
+    const version = ++saveVersion.current;
     setSaving("saving");
     const timer = setTimeout(() => {
       const snapshot = { ...answers };
       saveQueue.current = saveQueue.current.then(async () => {
         try {
           await api("draft", { lessonId: id, answers: snapshot });
-          setSaving("saved");
+          if (saveVersion.current === version) setSaving("saved");
         } catch {
-          setSaving("savedError");
+          if (saveVersion.current === version) setSaving("savedError");
         }
       });
     }, 650);
     return () => clearTimeout(timer);
-  }, [answers, dirty, finished, id, busy]);
-  if (failed) return <ErrorState message={failed} retry={load} />;
-  if (!lesson) return <Loading />;
-  const answered =
-    hw?.questions.filter((q) => answers[q.id]?.trim()).length || 0;
+  }, [answers, dirty, finished, id, busy, review, lesson?.viewed]);
+
+  function focusHomework(result = false) {
+    requestAnimationFrame(() => {
+      homeworkRef.current?.scrollIntoView({
+        behavior: reduced ? "instant" : "smooth",
+        block: "start",
+      });
+      const heading = homeworkRef.current?.querySelector<HTMLElement>(
+        result ? "#result-title" : "#homework-title",
+      );
+      heading?.focus({ preventScroll: true });
+    });
+  }
   async function send() {
-    if (!hw) return;
-    if (answered !== hw.questions.length) {
-      notify(t("answerAll"));
-      return;
-    }
-    if (!confirm(t("confirmSubmit"))) return;
+    if (!hw || !lesson || submitting.current) return;
+    submitting.current = true;
     setBusy(true);
+    setInlineError("");
     requestId.current ??= crypto.randomUUID();
     try {
       await saveQueue.current;
-      await api("submit", {
+      const result = await api<SubmissionView>("submit", {
         lessonId: id,
         answers,
         requestId: requestId.current,
         revision: hw.revision,
       });
+      const passed =
+        result.earnedPoints * 100 >= result.maxPoints * hw.passingScore;
+      setLesson({
+        ...lesson,
+        homework: {
+          ...hw,
+          submissions: [
+            result,
+            ...hw.submissions.filter((s) => s.id !== result.id),
+          ],
+          progress: {
+            draft: answers,
+            attemptCount: result.attempt,
+            bonusAttempts: p?.bonusAttempts || 0,
+            bestScore: Math.max(p?.bestScore || 0, result.score),
+            passedAt: passed ? result.createdAt : p?.passedAt || null,
+          },
+        },
+      });
+      setDirty(false);
+      setReview(result);
+      setSaving("");
       requestId.current = null;
-      await load();
-      notify(t("submitted"));
+      focusHomework(true);
     } catch (e) {
-      notify(error(e));
+      setInlineError(error(e));
     } finally {
       setBusy(false);
+      submitting.current = false;
     }
   }
+  if (failed) return <ErrorState message={failed} retry={load} />;
+  if (!lesson) return <Loading />;
+  const answered =
+    hw?.questions.filter((q) => answers[q.id]?.trim()).length || 0;
+  const q = hw?.questions[active];
+  const ru = lang === "ru";
   return (
     <>
       <Link href="/course" className="back-link">
@@ -107,12 +158,12 @@ export function Lesson({ id }: { id: string }) {
           </span>
           <h1>{lesson.title}</h1>
         </div>
-        <span className="badge available">
+        <span className="badge">
           {lesson.language === "ru" ? "РУС" : "ҚАЗ"}
         </span>
       </div>
-      <div className="lesson-layout">
-        <section className="lesson-main">
+      <div className="lesson-flow">
+        <section className="lesson-video-section">
           <div className="video-frame">
             <iframe
               src={lesson.videoUrl}
@@ -137,19 +188,32 @@ export function Lesson({ id }: { id: string }) {
           {lesson.description && (
             <p className="lesson-description">{lesson.description}</p>
           )}
-          <div className="viewed-panel">
+          <div className={`viewed-panel ${lesson.viewed ? "is-viewed" : ""}`}>
             <div>
-              <h3>{t("viewed")}</h3>
-              <p>{t("watchHelp")}</p>
+              <h3>
+                {lesson.viewed
+                  ? t("viewed")
+                  : ru
+                    ? "Сначала — видеоурок"
+                    : "Алдымен — бейнесабақ"}
+              </h3>
+              <p>
+                {lesson.viewed
+                  ? ru
+                    ? "Домашнее задание открыто. Можно приступать."
+                    : "Үй тапсырмасы ашылды. Бастауға болады."
+                  : t("watchHelp")}
+              </p>
             </div>
             <Button
-              variant={lesson.viewed ? "outline" : "default"}
-              disabled={lesson.viewed || busy}
+              variant="outline"
+              disabled={busy || lesson.viewed}
               onClick={async () => {
                 setBusy(true);
                 try {
                   await api("viewed", { lessonId: id });
-                  setLesson({ ...lesson, viewed: true });
+                  await load();
+                  focusHomework();
                 } catch (e) {
                   notify(error(e));
                 } finally {
@@ -157,261 +221,278 @@ export function Lesson({ id }: { id: string }) {
                 }
               }}
             >
-              <Check size={16} />
+              {busy && !lesson.viewed ? (
+                <LoaderCircle size={16} className="spin" />
+              ) : (
+                <Check size={16} />
+              )}
               {lesson.viewed ? t("viewed") : t("markViewed")}
             </Button>
           </div>
-          <section className="homework-panel" id="homework">
-            <div className="section-heading">
-              <h2>{t("homework")}</h2>
-              {hw && (
-                <span className="badge">
-                  {used} / {max} {t("attempts").toLowerCase()}
-                </span>
-              )}
-            </div>
-            {!hw ? (
-              <div className="empty-state">
-                <BookOpen />
-                <p>{t("homeworkPending")}</p>
-              </div>
-            ) : (
-              <>
-                {p?.passedAt && (
-                  <div className="result-banner success">
-                    <CheckCircle2 />
-                    <div>
-                      <strong>{t("passed")}</strong>
-                      <p>
-                        {t("best")}: {p.bestScore}%
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {!p?.passedAt && used > 0 && (
-                  <div className="result-banner">
-                    <TargetIcon />
-                    <div>
-                      <strong>
-                        {t("best")}: {p?.bestScore}%
-                      </strong>
-                      <p>{finished ? t("noAttempts") : t("failed")}</p>
-                    </div>
-                  </div>
-                )}
-                {!lesson.viewed && (
-                  <div className="notice">
-                    <Lock size={16} />
-                    {lang === "ru"
-                      ? "Сначала изучите видео и отметьте просмотр."
-                      : "Алдымен бейнені көріп, белгілеңіз."}
-                  </div>
-                )}
-                <div className="question-navigation">
-                  {hw.questions.map((q, i) => (
-                    <button
-                      key={q.id}
-                      onClick={() => setActive(i)}
-                      className={`${active === i ? "current" : ""} ${answers[q.id] ? "answered" : ""}`}
-                      aria-label={`${t("question")} ${i + 1}: ${answers[q.id] ? t("selected") : t("unanswered")}`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-                {hw.questions[active] &&
-                  (() => {
-                    const q = hw.questions[active];
-                    return (
-                      <div className="question-card">
-                        <div className="question-top">
-                          <span>
-                            {t("question")} {active + 1} / {hw.questions.length}
-                          </span>
-                          <span className="badge">
-                            {t("level")} {q.level}
-                          </span>
-                        </div>
-                        <h3>
-                          <MathText text={q.text} />
-                        </h3>
-                        {q.type === "MULTIPLE_CHOICE" ? (
-                          <fieldset
-                            disabled={finished || busy || !lesson.viewed}
-                          >
-                            <legend className="sr-only">{t("options")}</legend>
-                            {q.options.map((option, i) => {
-                              const code = "ABCDE"[i];
-                              return (
-                                <label
-                                  key={code}
-                                  className={`answer-option ${answers[q.id] === code ? "chosen" : ""}`}
-                                >
-                                  <input
-                                    type="radio"
-                                    name={q.id}
-                                    value={code}
-                                    checked={answers[q.id] === code}
-                                    onChange={() => {
-                                      requestId.current = null;
-                                      setAnswers({ ...answers, [q.id]: code });
-                                      setDirty(true);
-                                    }}
-                                  />
-                                  <span className="option-letter">{code}</span>
-                                  <MathText text={option} />
-                                  {answers[q.id] === code && (
-                                    <Check size={17} />
-                                  )}
-                                </label>
-                              );
-                            })}
-                          </fieldset>
-                        ) : (
-                          <label>
-                            {t("answer")}
-                            <input
-                              disabled={finished || busy || !lesson.viewed}
-                              value={answers[q.id] || ""}
-                              maxLength={1000}
-                              onChange={(e) => {
-                                requestId.current = null;
-                                setAnswers({
-                                  ...answers,
-                                  [q.id]: e.target.value,
-                                });
-                                setDirty(true);
-                              }}
-                            />
-                          </label>
-                        )}
-                        <div className="question-footer">
-                          <Button
-                            variant="outline"
-                            disabled={active === 0}
-                            onClick={() => setActive(active - 1)}
-                          >
-                            {t("previous")}
-                          </Button>
-                          <span
-                            className={
-                              saving === "savedError"
-                                ? "error-message"
-                                : "muted"
-                            }
-                            aria-live="polite"
-                          >
-                            {saving
-                              ? t(saving as "saving" | "saved" | "savedError")
-                              : ""}
-                          </span>
-                          <Button
-                            variant="outline"
-                            disabled={active === hw.questions.length - 1}
-                            onClick={() => setActive(active + 1)}
-                          >
-                            {t("next")}
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                {!finished && (
-                  <div className="submit-panel">
-                    <div>
-                      <strong>
-                        {answered} / {hw.questions.length}
-                      </strong>
-                      <span>
-                        {t("questions").toLowerCase()} · {t("pass")}{" "}
-                        {hw.passingScore}%
-                      </span>
-                    </div>
-                    <Button
-                      onClick={send}
-                      disabled={
-                        busy ||
-                        !lesson.viewed ||
-                        answered !== hw.questions.length
-                      }
-                    >
-                      <Send size={16} />
-                      {busy ? t("submitting") : t("submit")}
-                    </Button>
-                  </div>
-                )}
-                {hw.solutions.length > 0 && (
-                  <details className="solutions">
-                    <summary>{t("solution")}</summary>
-                    {hw.solutions.map((s, i) => (
-                      <div key={s.id}>
-                        <strong>
-                          {i + 1}. {t("answer")}: {s.correctAnswer}
-                        </strong>
-                        {s.explanation && (
-                          <p>
-                            <MathText text={s.explanation} />
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </details>
-                )}
-              </>
-            )}
-          </section>
         </section>
-        <aside className="lesson-aside">
-          <section className="panel">
-            <span className="eyebrow">{t("homework")}</span>
-            <h3>{t("pass")} ≥ 80%</h3>
-            <div className="detail-row">
-              <span>{t("questions")}</span>
-              <strong>{hw?.questions.length ?? "—"}</strong>
+        <section className="homework-panel" id="homework" ref={homeworkRef}>
+          <div className="section-heading homework-heading">
+            <div>
+              <span className="eyebrow">{ru ? "Практика" : "Тәжірибе"}</span>
+              <h2 id="homework-title" tabIndex={-1}>
+                {t("homework")}
+              </h2>
             </div>
-            <div className="detail-row">
-              <span>{t("attempts")}</span>
-              <strong>
-                {used} / {max}
-              </strong>
+            {hw && (
+              <span className="badge">
+                {used} / {max} {t("attempts").toLowerCase()}
+              </span>
+            )}
+          </div>
+          {!hw ? (
+            <div className="empty-state">
+              <BookOpen />
+              <p>{t("homeworkPending")}</p>
             </div>
-            <div className="detail-row">
-              <span>{t("best")}</span>
-              <strong>{p ? `${p.bestScore}%` : "—"}</strong>
-            </div>
-            {hw?.questions.length === 8 && (
-              <p className="muted fine-print">
-                {lang === "ru"
-                  ? "Для зачёта: 7 из 8 верных ответов (87,5%)."
-                  : "Өту үшін: 8 сұрақтың 7-еуіне дұрыс жауап (87,5%)."}
+          ) : !lesson.viewed ? (
+            <div className="homework-locked">
+              <span className="locked-icon">
+                <Lock size={21} />
+              </span>
+              <h3>
+                {ru
+                  ? "Задание откроется после просмотра"
+                  : "Тапсырма бейнені көргеннен кейін ашылады"}
+              </h3>
+              <p>
+                {ru
+                  ? "Посмотрите урок и нажмите «Я посмотрел(а) урок» над этим блоком."
+                  : "Сабақты көріп, осы бөлімнің үстіндегі «Сабақты көрдім» батырмасын басыңыз."}
               </p>
-            )}
-          </section>
-          <section className="panel">
-            <h3>{t("history")}</h3>
-            {hw?.submissions.length ? (
-              hw.submissions.map((s) => (
-                <div className="history-item" key={s.id}>
-                  <div>
-                    <strong>
-                      {t("attempt")} {s.attempt}
-                    </strong>
-                    <small>{date(s.createdAt)}</small>
+              <div className="homework-meta">
+                <span>
+                  {hw.questionCount} {t("questions").toLowerCase()}
+                </span>
+                <span>
+                  {t("pass")} ≥ {hw.passingScore}%
+                </span>
+                <span>
+                  {max} {t("attempts").toLowerCase()}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {review ? (
+                <HomeworkResult
+                  key={review.id}
+                  submission={review}
+                  questions={hw.questions}
+                  passingScore={hw.passingScore}
+                  remaining={Math.max(0, max - used)}
+                  finished={finished}
+                  onRetry={() => {
+                    setReview(null);
+                    setActive(0);
+                    setInlineError("");
+                    setSaving("");
+                    focusHomework();
+                  }}
+                />
+              ) : (
+                <>
+                  <div className="homework-meta">
+                    <span>
+                      {hw.questionCount} {t("questions").toLowerCase()}
+                    </span>
+                    <span>
+                      {t("pass")} ≥ {hw.passingScore}%
+                    </span>
+                    <span>
+                      {t("attempt")} {Math.min(used + 1, max)} / {max}
+                    </span>
                   </div>
-                  <span className={`badge ${s.score >= 80 ? "completed" : ""}`}>
-                    {s.earnedPoints}/{s.maxPoints} · {s.score}%
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="muted">{t("noHistory")}</p>
-            )}
-          </section>
-        </aside>
+                  <div
+                    className="question-navigation"
+                    aria-label={
+                      ru ? "Навигация по вопросам" : "Сұрақтар бойынша шарлау"
+                    }
+                  >
+                    {hw.questions.map((question, i) => (
+                      <button
+                        key={question.id}
+                        onClick={() => setActive(i)}
+                        aria-current={active === i ? "step" : undefined}
+                        className={`${active === i ? "current" : ""} ${answers[question.id] ? "answered" : ""}`}
+                        aria-label={`${t("question")} ${i + 1}: ${answers[question.id] ? t("selected") : t("unanswered")}`}
+                      >
+                        {i + 1}
+                        {answers[question.id] && (
+                          <span className="answer-dot" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {q && (
+                    <motion.div
+                      key={q.id}
+                      className="question-card"
+                      initial={{
+                        opacity: reduced ? 1 : 0.65,
+                        y: reduced ? 0 : 3,
+                      }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: reduced ? 0 : 0.16 }}
+                    >
+                      <div className="question-top">
+                        <span>
+                          {t("question")} {active + 1} / {hw.questions.length}
+                        </span>
+                        <span className="badge">
+                          {t("level")} {q.level}
+                        </span>
+                      </div>
+                      <h3>
+                        <MathText text={q.text} />
+                      </h3>
+                      {q.type === "MULTIPLE_CHOICE" ? (
+                        <fieldset disabled={finished || busy}>
+                          <legend className="sr-only">{t("options")}</legend>
+                          {q.options.map((option, i) => {
+                            const code = "ABCDE"[i];
+                            return (
+                              <label
+                                key={code}
+                                className={`answer-option ${answers[q.id] === code ? "chosen" : ""}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={q.id}
+                                  value={code}
+                                  checked={answers[q.id] === code}
+                                  onChange={() => {
+                                    requestId.current = null;
+                                    setAnswers({ ...answers, [q.id]: code });
+                                    setDirty(true);
+                                  }}
+                                />
+                                <span className="option-letter">{code}</span>
+                                <MathText text={option} />
+                                {answers[q.id] === code && <Check size={17} />}
+                              </label>
+                            );
+                          })}
+                        </fieldset>
+                      ) : (
+                        <label>
+                          {t("answer")}
+                          <input
+                            disabled={finished || busy}
+                            value={answers[q.id] || ""}
+                            maxLength={1000}
+                            onChange={(e) => {
+                              requestId.current = null;
+                              setAnswers({
+                                ...answers,
+                                [q.id]: e.target.value,
+                              });
+                              setDirty(true);
+                            }}
+                          />
+                        </label>
+                      )}
+                      <div className="question-footer">
+                        <Button
+                          variant="outline"
+                          disabled={active === 0}
+                          onClick={() => setActive(active - 1)}
+                        >
+                          <ArrowLeft size={14} />
+                          {t("previous")}
+                        </Button>
+                        <span
+                          className={
+                            saving === "savedError" ? "error-message" : "muted"
+                          }
+                          aria-live="polite"
+                        >
+                          {saving
+                            ? t(saving as "saving" | "saved" | "savedError")
+                            : ""}
+                        </span>
+                        <Button
+                          variant="outline"
+                          disabled={active === hw.questions.length - 1}
+                          onClick={() => setActive(active + 1)}
+                        >
+                          {t("next")}
+                          <ArrowRight size={14} />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                  {!finished && (
+                    <div className="submit-panel">
+                      <div>
+                        <strong>
+                          {answered} / {hw.questions.length}
+                        </strong>
+                        <span>
+                          {ru ? "ответов заполнено" : "жауап толтырылды"}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => setConfirming(true)}
+                        disabled={busy || answered !== hw.questions.length}
+                      >
+                        {busy ? (
+                          <LoaderCircle size={16} className="spin" />
+                        ) : (
+                          <Send size={16} />
+                        )}
+                        {busy ? t("submitting") : t("submit")}
+                      </Button>
+                    </div>
+                  )}
+                  {inlineError && (
+                    <p className="error-message" role="alert">
+                      {inlineError}
+                    </p>
+                  )}
+                </>
+              )}
+              {hw.submissions.length > 0 && (
+                <section className="attempt-history">
+                  <h3>{t("history")}</h3>
+                  <div>
+                    {hw.submissions.map((s) => (
+                      <button
+                        key={s.id}
+                        className={`attempt-link ${review?.id === s.id ? "active" : ""}`}
+                        onClick={() => {
+                          setReview(s);
+                          focusHomework(true);
+                        }}
+                      >
+                        <span>
+                          {t("attempt")} {s.attempt}
+                          <small>{date(s.createdAt)}</small>
+                        </span>
+                        <strong>
+                          {s.earnedPoints}/{s.maxPoints}
+                        </strong>
+                        <ArrowRight size={15} />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </section>
       </div>
+      <SubmitDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        onConfirm={() => void send()}
+        attempt={used + 1}
+        max={max}
+      />
     </>
   );
-}
-function TargetIcon() {
-  return <CheckCircle2 />;
 }

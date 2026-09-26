@@ -164,40 +164,36 @@ export async function lessonView(user: User, id: string) {
       where: { userId_lessonId: { userId: user.id, lessonId: id } },
     }),
   ]);
-  const questions = hw
-    ? await db.question.findMany({
-        where: { homeworkId: hw.id },
-        orderBy: { order: "asc" },
-        select: questionSelect,
-      })
-    : [];
-  const submissions = hw
-    ? await db.submission.findMany({
-        where: { userId: user.id, homeworkId: hw.id },
-        orderBy: { attempt: "desc" },
-        take: 20,
-        select: {
-          id: true,
-          attempt: true,
-          score: true,
-          earnedPoints: true,
-          maxPoints: true,
-          createdAt: true,
-        },
-      })
-    : [];
-  const reveal =
-    hw &&
-    progress &&
-    (progress.passedAt ||
-      progress.attemptCount >= hw.maxAttempts + progress.bonusAttempts);
-  const solutions = reveal
-    ? await db.question.findMany({
-        where: { homeworkId: hw.id },
-        orderBy: { order: "asc" },
-        select: { id: true, correctAnswer: true, explanation: true },
-      })
-    : [];
+  const viewed = !!lessonProgress?.viewedAt;
+  const questionCount = hw
+    ? await db.question.count({ where: { homeworkId: hw.id } })
+    : 0;
+  const questions =
+    hw && viewed
+      ? await db.question.findMany({
+          where: { homeworkId: hw.id },
+          orderBy: { order: "asc" },
+          select: questionSelect,
+        })
+      : [];
+  const submissions =
+    hw && viewed
+      ? await db.submission.findMany({
+          where: { userId: user.id, homeworkId: hw.id },
+          orderBy: { attempt: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            attempt: true,
+            score: true,
+            earnedPoints: true,
+            maxPoints: true,
+            createdAt: true,
+            answers: true,
+            result: true,
+          },
+        })
+      : [];
   return {
     id: lesson.id,
     title: lesson.title,
@@ -209,9 +205,15 @@ export async function lessonView(user: User, id: string) {
     opensAt: opening,
     videoUrl: `https://drive.google.com/file/d/${lesson.videoId}/preview`,
     videoExternalUrl: `https://drive.google.com/file/d/${lesson.videoId}/view`,
-    viewed: !!lessonProgress?.viewedAt,
+    viewed,
     homework: hw
-      ? { ...hw, questions, progress, submissions, solutions }
+      ? {
+          ...hw,
+          questionCount,
+          questions,
+          progress: viewed ? progress : null,
+          submissions,
+        }
       : null,
   };
 }
@@ -219,6 +221,10 @@ async function homeworkAccess(user: User, lessonId: string) {
   const { lesson } = await access(user, lessonId);
   if (!lesson.homework || lesson.homework.status !== "PUBLISHED")
     throw new HttpError(404, "HOMEWORK_PENDING");
+  const watched = await db.lessonProgress.findUnique({
+    where: { userId_lessonId: { userId: user.id, lessonId } },
+  });
+  if (!watched?.viewedAt) throw new HttpError(409, "WATCH_REQUIRED");
   return lesson.homework;
 }
 export async function saveDraft(
@@ -266,6 +272,9 @@ export async function submit(
       attempt: true,
       earnedPoints: true,
       maxPoints: true,
+      answers: true,
+      result: true,
+      createdAt: true,
     },
   });
   if (existing) return existing;
@@ -340,6 +349,9 @@ export async function submit(
               attempt: true,
               earnedPoints: true,
               maxPoints: true,
+              answers: true,
+              result: true,
+              createdAt: true,
             },
           });
         },
@@ -356,6 +368,9 @@ export async function submit(
             attempt: true,
             earnedPoints: true,
             maxPoints: true,
+            answers: true,
+            result: true,
+            createdAt: true,
           },
         });
         if (found) return found;

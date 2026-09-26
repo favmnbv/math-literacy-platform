@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import bank from "../../content/homeworks.json";
-const credentials = readFileSync("credentials.local.txt", "utf8");
+const credentials = readFileSync(
+  process.env.E2E_CREDENTIALS || "credentials.local.txt",
+  "utf8",
+);
 function password(username: string) {
   const escaped = username.replace(".", "\\.");
   return credentials.match(new RegExp(`${escaped}\\r?\\nПароль: (\\S+)`))![1];
@@ -109,11 +112,11 @@ test("kazakh content contains equations and no untranslated fallback curriculum"
   await expect(
     page.getByRole("heading", { name: "Теңдеу мен есептеулер", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".question-card .katex").first()).toBeVisible();
   await page.screenshot({ path: "../../work/lesson-kk.png", fullPage: true });
   await page
     .getByRole("button", { name: "Я посмотрел(а) урок", exact: true })
     .click();
+  await expect(page.locator(".question-card .katex").first()).toBeVisible();
   for (let i = 0; i < 8; i++) {
     await page.locator(".question-navigation button").nth(i).click();
     await page
@@ -122,10 +125,18 @@ test("kazakh content contains equations and no untranslated fallback curriculum"
       )
       .check();
   }
-  page.once("dialog", (dialog) => dialog.accept());
   await page
     .getByRole("button", { name: "Сдать домашнее задание", exact: true })
     .click();
+  await page
+    .getByRole("button", { name: "Сдать и увидеть результат", exact: true })
+    .click();
+  await expect(page.locator(".result-answer")).toHaveCount(8);
+  await expect(page.locator(".result-answer.is-incorrect")).toHaveCount(1);
+  await expect(page.locator(".result-score strong")).toHaveText("87,5%");
+  await expect(
+    page.getByRole("button", { name: "Попробовать ещё раз", exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByText("Домашнее задание зачтено", { exact: true }),
   ).toBeVisible();
@@ -161,7 +172,7 @@ test("three whole-homework submissions; retries idempotent; fourth rejected; gra
   await login(admin, "admin");
   const issued = await (
     await admin.request.post("/api/platform", {
-      headers: { Origin: "http://localhost:3000" },
+      headers: { Origin: process.env.E2E_BASE_URL || "http://localhost:3000" },
       data: {
         action: "createStudent",
         name: "Проверка попыток",
@@ -171,12 +182,12 @@ test("three whole-homework submissions; retries idempotent; fourth rejected; gra
   ).json();
   const student = await browser.newContext();
   const r = await student.request.post("/api/auth/sign-in/username", {
-    headers: { Origin: "http://localhost:3000" },
+    headers: { Origin: process.env.E2E_BASE_URL || "http://localhost:3000" },
     data: { username: issued.username, password: issued.password },
   });
   expect(r.ok()).toBe(true);
   let result = await student.request.post("/api/platform", {
-    headers: { Origin: "http://localhost:3000" },
+    headers: { Origin: process.env.E2E_BASE_URL || "http://localhost:3000" },
     data: {
       action: "password",
       currentPassword: issued.password,
@@ -186,9 +197,28 @@ test("three whole-homework submissions; retries idempotent; fourth rejected; gra
   expect(result.ok()).toBe(true);
   const post = (data: Record<string, unknown>) =>
     student.request.post("/api/platform", {
-      headers: { Origin: "http://localhost:3000" },
+      headers: { Origin: process.env.E2E_BASE_URL || "http://localhost:3000" },
       data,
     });
+  const locked = await (
+    await student.request.get("/api/platform?action=lesson&id=ru-02")
+  ).json();
+  expect(locked.homework.questions).toHaveLength(0);
+  expect(locked.homework.questionCount).toBe(8);
+  expect(
+    (await post({ action: "draft", lessonId: "ru-02", answers: {} })).status(),
+  ).toBe(409);
+  expect(
+    (
+      await post({
+        action: "submit",
+        lessonId: "ru-02",
+        answers: {},
+        requestId: crypto.randomUUID(),
+        revision: 1,
+      })
+    ).status(),
+  ).toBe(409);
   await post({ action: "viewed", lessonId: "ru-02" });
   const lesson = await (
     await student.request.get("/api/platform?action=lesson&id=ru-02")
@@ -217,12 +247,45 @@ test("three whole-homework submissions; retries idempotent; fourth rejected; gra
   const before = await (
     await student.request.get("/api/platform?action=lesson&id=ru-02")
   ).json();
-  expect(before.homework.solutions).toHaveLength(0);
+  expect(before.homework.submissions[0].result).toHaveLength(8);
+  expect(
+    before.homework.submissions[0].result.filter(
+      (q: { correct: boolean }) => q.correct,
+    ),
+  ).toHaveLength(1);
+  expect(JSON.stringify(before)).not.toMatch(/correctAnswer|explanation/);
   const csrf = await student.request.post("/api/platform", {
     headers: { Origin: "https://untrusted.example" },
     data: { action: "viewed", lessonId: "ru-02" },
   });
   expect(csrf.status()).toBe(403);
+  const reviewPage = await student.newPage();
+  await reviewPage.goto("/course/ru-02");
+  await expect(reviewPage.locator(".result-answer.is-incorrect")).toHaveCount(
+    7,
+  );
+  await reviewPage
+    .getByRole("button", { name: "Попробовать ещё раз", exact: true })
+    .click();
+  await expect(reviewPage.locator(".question-card")).toBeVisible();
+  await expect(reviewPage.locator("input[type=radio][value=A]")).toBeChecked();
+  await reviewPage.locator(".attempt-link").click();
+  await expect(reviewPage.locator(".homework-result")).toBeVisible();
+  await reviewPage.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await reviewPage.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await reviewPage.getByRole("button", { name: "Тёмная", exact: true }).click();
+  await reviewPage
+    .locator(".homework-result")
+    .screenshot({ path: "../../work/result-mobile-dark.png" });
+  await reviewPage.getByRole("button", { name: "ҚАЗ", exact: true }).click();
+  await expect(
+    reviewPage.getByRole("heading", { name: "Тест нәтижесі", exact: true }),
+  ).toBeVisible();
+  await reviewPage.close();
   const simultaneous = await Promise.all([
     post({ ...data, requestId: crypto.randomUUID() }),
     post({ ...data, requestId: crypto.randomUUID() }),
@@ -235,11 +298,22 @@ test("three whole-homework submissions; retries idempotent; fourth rejected; gra
     await student.request.get("/api/platform?action=lesson&id=ru-02")
   ).json();
   expect(after.homework.progress.attemptCount).toBe(3);
-  expect(
-    after.homework.solutions
-      .map((s: { correctAnswer: string }) => s.correctAnswer)
-      .join(""),
-  ).toBe("CDACBBEB");
+  expect(after.homework.submissions).toHaveLength(3);
+  expect(JSON.stringify(after)).not.toMatch(/correctAnswer|explanation/);
+  const ui = await student.newPage();
+  await ui.goto("/course/ru-02");
+  await ui.getByRole("button", { name: "РУС", exact: true }).click();
+  await expect(
+    ui.getByRole("heading", { name: "Результат теста", exact: true }),
+  ).toBeVisible();
+  await expect(ui.locator(".result-answer.is-incorrect")).toHaveCount(7);
+  await expect(
+    ui.getByRole("button", { name: "Попробовать ещё раз", exact: true }),
+  ).toHaveCount(0);
+  await ui.locator(".attempt-link").last().click();
+  await expect(ui.locator(".result-summary .eyebrow")).toContainText(
+    "Попытка 1",
+  );
   await admin.close();
   await student.close();
 });

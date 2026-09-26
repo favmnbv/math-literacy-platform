@@ -40,6 +40,8 @@ export type SubmissionView = {
   earnedPoints: number;
   maxPoints: number;
   createdAt: string;
+  answers: Record<string, string>;
+  result: { id: string; correct: boolean; points: number }[];
 };
 export type LessonView = {
   id: string;
@@ -57,6 +59,7 @@ export type LessonView = {
     revision: number;
     maxAttempts: number;
     passingScore: number;
+    questionCount: number;
     questions: QuestionView[];
     progress: null | {
       draft: Record<string, string>;
@@ -66,7 +69,6 @@ export type LessonView = {
       passedAt: string | null;
     };
     submissions: SubmissionView[];
-    solutions: { id: string; correctAnswer: string; explanation: string }[];
   };
 };
 export type CohortView = {
