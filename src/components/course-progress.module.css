@@ -17,6 +17,7 @@
   border-radius: 3px;
   background: transparent;
   transform: none;
+  cursor: pointer;
 }
 .mark > span {
   display: block;
@@ -71,4 +72,13 @@
 }
 .detail [data-complete="true"] {
   color: var(--success);
+}
+.accessNotice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+}
+.accessNotice svg {
+  flex: none;
 }

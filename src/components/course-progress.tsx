@@ -2,6 +2,8 @@
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { Lock } from "lucide-react";
 import type { LessonCard } from "@/lib/types";
 import { useApp } from "./context";
 import { usePrefersReducedMotion } from "./ui/use-prefers-reduced-motion";
@@ -9,6 +11,7 @@ import styles from "./course-progress.module.css";
 
 export function CourseProgress({ lessons }: { lessons: LessonCard[] }) {
   const { lang, t, date } = useApp();
+  const router = useRouter();
   const reducedMotion = usePrefersReducedMotion();
   const tooltipId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -19,6 +22,7 @@ export function CourseProgress({ lessons }: { lessons: LessonCard[] }) {
   const [focused, setFocused] = useState<number | null>(null);
   const [tabStop, setTabStop] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  const [deniedLesson, setDeniedLesson] = useState<string | null>(null);
   const active = dismissed ? null : (hovered ?? focused);
   const selected = active === null ? undefined : lessons[active];
 
@@ -38,7 +42,11 @@ export function CourseProgress({ lessons }: { lessons: LessonCard[] }) {
       window.removeEventListener("resize", position);
       window.removeEventListener("scroll", position, true);
     };
-  }, [selected, lang]);
+  }, [selected, lang, deniedLesson]);
+
+  function canOpen(lesson: LessonCard) {
+    return ["AVAILABLE", "IN_PROGRESS", "COMPLETED"].includes(lesson.state);
+  }
 
   function status(lesson: LessonCard) {
     if (lesson.state === "COMPLETED") return t("completed");
@@ -120,9 +128,16 @@ export function CourseProgress({ lessons }: { lessons: LessonCard[] }) {
                 setDismissed(false);
               }}
               onClick={() => {
+                setHovered(index);
                 setFocused(index);
                 setTabStop(index);
                 setDismissed(false);
+                if (canOpen(lesson)) {
+                  setDeniedLesson(null);
+                  router.push(`/course/${encodeURIComponent(lesson.id)}`);
+                } else {
+                  setDeniedLesson(lesson.id);
+                }
               }}
             >
               <motion.span
@@ -156,6 +171,14 @@ export function CourseProgress({ lessons }: { lessons: LessonCard[] }) {
               {t("lesson")} {selected.order}
             </span>
             <strong>{selected.title}</strong>
+            {deniedLesson === selected.id && (
+              <span className={styles.accessNotice} role="status">
+                <Lock size={14} aria-hidden="true" />
+                {lang === "ru"
+                  ? "Пока нет доступа к этому уроку"
+                  : "Бұл сабақ әзірге қолжетімсіз"}
+              </span>
+            )}
             <span data-complete={selected.state === "COMPLETED"}>
               {status(selected)}
             </span>

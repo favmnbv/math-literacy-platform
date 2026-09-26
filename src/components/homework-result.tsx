@@ -1,10 +1,11 @@
 "use client";
 import { Check, X, ArrowRight, RotateCcw } from "lucide-react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { QuestionView, SubmissionView } from "@/lib/types";
 import { useApp } from "./context";
 import { MathText } from "./math-text";
 import { Button } from "./ui/button";
+import { usePrefersReducedMotion } from "./ui/use-prefers-reduced-motion";
 
 export function HomeworkResult({
   submission,
@@ -22,7 +23,7 @@ export function HomeworkResult({
   onRetry: () => void;
 }) {
   const { lang, t, date } = useApp();
-  const reduced = useReducedMotion();
+  const reduced = usePrefersReducedMotion();
   const ru = lang === "ru";
   const passed =
     submission.earnedPoints * 100 >= submission.maxPoints * passingScore;
@@ -44,9 +45,14 @@ export function HomeworkResult({
     >
       <div className="result-summary">
         <div>
-          <span className="eyebrow">
-            {t("attempt")} {submission.attempt} · {date(submission.createdAt)}
-          </span>
+          <div className="result-attempt">
+            <span>
+              {t("attempt")} {submission.attempt}
+            </span>
+            <time dateTime={submission.createdAt}>
+              {date(submission.createdAt)}
+            </time>
+          </div>
           <h2 id="result-title" tabIndex={-1}>
             {ru ? "Результат теста" : "Тест нәтижесі"}
           </h2>

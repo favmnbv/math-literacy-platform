@@ -311,9 +311,7 @@ test("three whole-homework submissions; retries idempotent; fourth rejected; gra
     ui.getByRole("button", { name: "Попробовать ещё раз", exact: true }),
   ).toHaveCount(0);
   await ui.locator(".attempt-link").last().click();
-  await expect(ui.locator(".result-summary .eyebrow")).toContainText(
-    "Попытка 1",
-  );
+  await expect(ui.locator(".result-attempt")).toContainText("Попытка 1");
   await admin.close();
   await student.close();
 });

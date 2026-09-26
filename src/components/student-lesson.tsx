@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Check,
@@ -20,10 +20,12 @@ import { MathText } from "./math-text";
 import { api } from "@/lib/client";
 import type { LessonView, SubmissionView } from "@/lib/types";
 import { Loading, ErrorState } from "./portal";
+import { usePrefersReducedMotion } from "./ui/use-prefers-reduced-motion";
+import styles from "./student-lesson.module.css";
 
 export function Lesson({ id }: { id: string }) {
   const { t, lang, error, notify, date } = useApp();
-  const reduced = useReducedMotion();
+  const reduced = usePrefersReducedMotion();
   const [lesson, setLesson] = useState<LessonView | null>(null);
   const [failed, setFailed] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -146,48 +148,57 @@ export function Lesson({ id }: { id: string }) {
   const q = hw?.questions[active];
   const ru = lang === "ru";
   return (
-    <>
+    <article className={styles.page}>
       <Link href="/course" className="back-link">
         <ArrowLeft size={16} />
         {t("back")}
       </Link>
-      <div className="page-heading">
+      <header className={styles.heading}>
         <div>
-          <span className="eyebrow">
-            {lesson.courseTitle} · {t("lesson")} {lesson.order}
-          </span>
+          <p className={styles.courseName}>{lesson.courseTitle}</p>
           <h1>{lesson.title}</h1>
         </div>
-        <span className="badge">
-          {lesson.language === "ru" ? "РУС" : "ҚАЗ"}
-        </span>
-      </div>
+        <div className={styles.lessonIdentity}>
+          <span>
+            {t("lesson")} {String(lesson.order).padStart(2, "0")}
+          </span>
+          <span>{lesson.language === "ru" ? "РУС" : "ҚАЗ"}</span>
+        </div>
+      </header>
       <div className="lesson-flow">
-        <section className="lesson-video-section">
-          <div className="video-frame">
-            <iframe
-              src={lesson.videoUrl}
-              title={`${t("lesson")} ${lesson.order}: ${lesson.title}`}
-              allow="autoplay; fullscreen; encrypted-media"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
+        <h2 id="video-title" className={styles.videoTitle}>
+          {ru ? "Видеоурок" : "Бейнесабақ"}
+        </h2>
+        <section
+          className={`lesson-video-section ${styles.videoLayout}`}
+          aria-labelledby="video-title"
+        >
+          <div className={styles.videoContent}>
+            <div className="video-frame">
+              <iframe
+                src={lesson.videoUrl}
+                title={`${t("lesson")} ${lesson.order}: ${lesson.title}`}
+                allow="autoplay; fullscreen; encrypted-media"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+            <div className="video-caption">
+              <span>{t("videoHelp")}</span>
+              <a
+                href={lesson.videoExternalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("videoExternal")}
+                <ExternalLink size={13} />
+              </a>
+            </div>
+            {lesson.description && (
+              <p className="lesson-description">{lesson.description}</p>
+            )}
           </div>
-          <div className="video-caption">
-            <span>{t("videoHelp")}</span>
-            <a
-              href={lesson.videoExternalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("videoExternal")}
-              <ExternalLink size={13} />
-            </a>
-          </div>
-          {lesson.description && (
-            <p className="lesson-description">{lesson.description}</p>
-          )}
           <div className={`viewed-panel ${lesson.viewed ? "is-viewed" : ""}`}>
             <div>
               <h3>
@@ -199,9 +210,15 @@ export function Lesson({ id }: { id: string }) {
               </h3>
               <p>
                 {lesson.viewed
-                  ? ru
-                    ? "Домашнее задание открыто. Можно приступать."
-                    : "Үй тапсырмасы ашылды. Бастауға болады."
+                  ? !hw
+                    ? t("homeworkPending")
+                    : p?.passedAt
+                      ? ru
+                        ? "Задание уже зачтено. Результат сохранён ниже."
+                        : "Тапсырма өтті. Нәтижесі төменде сақталған."
+                      : ru
+                        ? "Домашнее задание открыто. Можно приступать."
+                        : "Үй тапсырмасы ашылды. Бастауға болады."
                   : t("watchHelp")}
               </p>
             </div>
@@ -228,19 +245,24 @@ export function Lesson({ id }: { id: string }) {
               )}
               {lesson.viewed ? t("viewed") : t("markViewed")}
             </Button>
+            {lesson.viewed && hw && (
+              <a href="#homework" className={styles.practiceLink}>
+                {ru ? "Перейти к заданию" : "Тапсырмаға өту"}
+                <ArrowRight size={15} />
+              </a>
+            )}
           </div>
         </section>
         <section className="homework-panel" id="homework" ref={homeworkRef}>
           <div className="section-heading homework-heading">
             <div>
-              <span className="eyebrow">{ru ? "Практика" : "Тәжірибе"}</span>
               <h2 id="homework-title" tabIndex={-1}>
                 {t("homework")}
               </h2>
             </div>
             {hw && (
               <span className="badge">
-                {used} / {max} {t("attempts").toLowerCase()}
+                {t("attempts")}: {used} / {max}
               </span>
             )}
           </div>
@@ -307,153 +329,165 @@ export function Lesson({ id }: { id: string }) {
                       {t("attempt")} {Math.min(used + 1, max)} / {max}
                     </span>
                   </div>
-                  <div
-                    className="question-navigation"
-                    aria-label={
-                      ru ? "Навигация по вопросам" : "Сұрақтар бойынша шарлау"
-                    }
-                  >
-                    {hw.questions.map((question, i) => (
-                      <button
-                        key={question.id}
-                        onClick={() => setActive(i)}
-                        aria-current={active === i ? "step" : undefined}
-                        className={`${active === i ? "current" : ""} ${answers[question.id] ? "answered" : ""}`}
-                        aria-label={`${t("question")} ${i + 1}: ${answers[question.id] ? t("selected") : t("unanswered")}`}
+                  <div className={styles.worksheet}>
+                    <div className={styles.questionMap}>
+                      <h3>{ru ? "Вопросы" : "Сұрақтар"}</h3>
+                      <div
+                        className="question-navigation"
+                        role="group"
+                        aria-label={
+                          ru
+                            ? "Навигация по вопросам"
+                            : "Сұрақтар бойынша шарлау"
+                        }
                       >
-                        {i + 1}
-                        {answers[question.id] && (
-                          <span className="answer-dot" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  {q && (
-                    <motion.div
-                      key={q.id}
-                      className="question-card"
-                      initial={{
-                        opacity: reduced ? 1 : 0.65,
-                        y: reduced ? 0 : 3,
-                      }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: reduced ? 0 : 0.16 }}
-                    >
-                      <div className="question-top">
-                        <span>
-                          {t("question")} {active + 1} / {hw.questions.length}
-                        </span>
-                        <span className="badge">
-                          {t("level")} {q.level}
-                        </span>
+                        {hw.questions.map((question, i) => (
+                          <button
+                            key={question.id}
+                            onClick={() => setActive(i)}
+                            aria-current={active === i ? "step" : undefined}
+                            className={`${active === i ? "current" : ""} ${answers[question.id] ? "answered" : ""}`}
+                            aria-label={`${t("question")} ${i + 1}: ${answers[question.id] ? t("selected") : t("unanswered")}`}
+                          >
+                            {i + 1}
+                            {answers[question.id] && (
+                              <span className="answer-dot" />
+                            )}
+                          </button>
+                        ))}
                       </div>
-                      <h3>
-                        <MathText text={q.text} />
-                      </h3>
-                      {q.type === "MULTIPLE_CHOICE" ? (
-                        <fieldset disabled={finished || busy}>
-                          <legend className="sr-only">{t("options")}</legend>
-                          {q.options.map((option, i) => {
-                            const code = "ABCDE"[i];
-                            return (
-                              <label
-                                key={code}
-                                className={`answer-option ${answers[q.id] === code ? "chosen" : ""}`}
-                              >
-                                <input
-                                  type="radio"
-                                  name={q.id}
-                                  value={code}
-                                  checked={answers[q.id] === code}
-                                  onChange={() => {
-                                    requestId.current = null;
-                                    setAnswers({ ...answers, [q.id]: code });
-                                    setDirty(true);
-                                  }}
-                                />
-                                <span className="option-letter">{code}</span>
-                                <MathText text={option} />
-                                {answers[q.id] === code && <Check size={17} />}
-                              </label>
-                            );
-                          })}
-                        </fieldset>
-                      ) : (
-                        <label>
-                          {t("answer")}
-                          <input
-                            disabled={finished || busy}
-                            value={answers[q.id] || ""}
-                            maxLength={1000}
-                            onChange={(e) => {
-                              requestId.current = null;
-                              setAnswers({
-                                ...answers,
-                                [q.id]: e.target.value,
-                              });
-                              setDirty(true);
-                            }}
-                          />
-                        </label>
-                      )}
-                      <div className="question-footer">
-                        <Button
-                          variant="outline"
-                          disabled={active === 0}
-                          onClick={() => setActive(active - 1)}
-                        >
-                          <ArrowLeft size={14} />
-                          {t("previous")}
-                        </Button>
-                        <span
-                          className={
-                            saving === "savedError" ? "error-message" : "muted"
-                          }
-                          aria-live="polite"
-                        >
-                          {saving
-                            ? t(saving as "saving" | "saved" | "savedError")
-                            : ""}
-                        </span>
-                        <Button
-                          variant="outline"
-                          disabled={active === hw.questions.length - 1}
-                          onClick={() => setActive(active + 1)}
-                        >
-                          {t("next")}
-                          <ArrowRight size={14} />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                  {!finished && (
-                    <div className="submit-panel">
-                      <div>
-                        <strong>
-                          {answered} / {hw.questions.length}
-                        </strong>
-                        <span>
-                          {ru ? "ответов заполнено" : "жауап толтырылды"}
-                        </span>
-                      </div>
-                      <Button
-                        onClick={() => setConfirming(true)}
-                        disabled={busy || answered !== hw.questions.length}
-                      >
-                        {busy ? (
-                          <LoaderCircle size={16} className="spin" />
-                        ) : (
-                          <Send size={16} />
-                        )}
-                        {busy ? t("submitting") : t("submit")}
-                      </Button>
                     </div>
-                  )}
-                  {inlineError && (
-                    <p className="error-message" role="alert">
-                      {inlineError}
-                    </p>
-                  )}
+                    {q && (
+                      <motion.div
+                        key={q.id}
+                        className="question-card"
+                        initial={{
+                          opacity: reduced ? 1 : 0.65,
+                          y: reduced ? 0 : 3,
+                        }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: reduced ? 0 : 0.16 }}
+                      >
+                        <div className="question-top">
+                          <span>
+                            {t("question")} {active + 1} / {hw.questions.length}
+                          </span>
+                          <span className="badge">
+                            {t("level")} {q.level}
+                          </span>
+                        </div>
+                        <h3>
+                          <MathText text={q.text} />
+                        </h3>
+                        {q.type === "MULTIPLE_CHOICE" ? (
+                          <fieldset disabled={finished || busy}>
+                            <legend className="sr-only">{t("options")}</legend>
+                            {q.options.map((option, i) => {
+                              const code = "ABCDE"[i];
+                              return (
+                                <label
+                                  key={code}
+                                  className={`answer-option ${answers[q.id] === code ? "chosen" : ""}`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={q.id}
+                                    value={code}
+                                    checked={answers[q.id] === code}
+                                    onChange={() => {
+                                      requestId.current = null;
+                                      setAnswers({ ...answers, [q.id]: code });
+                                      setDirty(true);
+                                    }}
+                                  />
+                                  <span className="option-letter">{code}</span>
+                                  <MathText text={option} />
+                                  {answers[q.id] === code && (
+                                    <Check size={17} />
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </fieldset>
+                        ) : (
+                          <label>
+                            {t("answer")}
+                            <input
+                              disabled={finished || busy}
+                              value={answers[q.id] || ""}
+                              maxLength={1000}
+                              onChange={(e) => {
+                                requestId.current = null;
+                                setAnswers({
+                                  ...answers,
+                                  [q.id]: e.target.value,
+                                });
+                                setDirty(true);
+                              }}
+                            />
+                          </label>
+                        )}
+                        <div className="question-footer">
+                          <Button
+                            variant="outline"
+                            disabled={active === 0}
+                            onClick={() => setActive(active - 1)}
+                          >
+                            <ArrowLeft size={14} />
+                            {t("previous")}
+                          </Button>
+                          <span
+                            className={
+                              saving === "savedError"
+                                ? "error-message"
+                                : "muted"
+                            }
+                            aria-live="polite"
+                          >
+                            {saving
+                              ? t(saving as "saving" | "saved" | "savedError")
+                              : ""}
+                          </span>
+                          <Button
+                            variant="outline"
+                            disabled={active === hw.questions.length - 1}
+                            onClick={() => setActive(active + 1)}
+                          >
+                            {t("next")}
+                            <ArrowRight size={14} />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                    {!finished && (
+                      <div className="submit-panel">
+                        <div>
+                          <strong>
+                            {answered} / {hw.questions.length}
+                          </strong>
+                          <span>
+                            {ru ? "ответов заполнено" : "жауап толтырылды"}
+                          </span>
+                        </div>
+                        <Button
+                          onClick={() => setConfirming(true)}
+                          disabled={busy || answered !== hw.questions.length}
+                        >
+                          {busy ? (
+                            <LoaderCircle size={16} className="spin" />
+                          ) : (
+                            <Send size={16} />
+                          )}
+                          {busy ? t("submitting") : t("submit")}
+                        </Button>
+                      </div>
+                    )}
+                    {inlineError && (
+                      <p className="error-message" role="alert">
+                        {inlineError}
+                      </p>
+                    )}
+                  </div>
                 </>
               )}
               {hw.submissions.length > 0 && (
@@ -493,6 +527,6 @@ export function Lesson({ id }: { id: string }) {
         attempt={used + 1}
         max={max}
       />
-    </>
+    </article>
   );
 }
