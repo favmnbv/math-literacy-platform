@@ -388,7 +388,36 @@ fieldset {
 }
 .language-switch button[aria-pressed="true"] {
   color: var(--accent);
+}
+.sliding-switch button {
+  position: relative;
+  isolation: isolate;
+}
+.sliding-switch .switch-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background: var(--accent-soft);
+  pointer-events: none;
+  z-index: -1;
+}
+.sliding-switch .switch-label {
+  position: relative;
+}
+.sliding-switch button:hover {
+  color: var(--text);
+}
+.sliding-switch button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.tabs.sliding-switch .selected {
+  background: transparent;
+  box-shadow: none;
+}
+.tabs.sliding-switch .switch-indicator {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 .main-content {
   max-width: 1330px;
@@ -1605,6 +1634,8 @@ td small.table-note {
   }
   .login-preferences .language-switch button[aria-pressed="true"] {
     color: var(--surface);
+  }
+  .login-preferences .language-switch .switch-indicator {
     background: var(--accent);
   }
   .login-preferences .icon-button {

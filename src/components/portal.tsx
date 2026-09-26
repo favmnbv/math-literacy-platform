@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
@@ -25,6 +26,8 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { SlidingSwitch } from "./ui/sliding-switch";
+import { useContentTransition } from "./ui/use-content-transition";
 import { AppContext, useApp } from "./context";
 import { api } from "@/lib/client";
 import type { CourseView, Me, LessonCard } from "@/lib/types";
@@ -129,22 +132,19 @@ type ShellProps = {
 function Shell(p: ShellProps) {
   const { t, notify, error } = useApp();
   const router = useRouter();
+  const contentTransition = useContentTransition(`${p.pathname}:${p.lang}`);
   const controls = (
     <div className="preferences">
-      <div className="language-switch" aria-label={t("language")}>
-        <button
-          aria-pressed={p.lang === "ru"}
-          onClick={() => p.changeLang("ru")}
-        >
-          РУС
-        </button>
-        <button
-          aria-pressed={p.lang === "kk"}
-          onClick={() => p.changeLang("kk")}
-        >
-          ҚАЗ
-        </button>
-      </div>
+      <SlidingSwitch
+        className="language-switch"
+        label={t("language")}
+        value={p.lang}
+        onChange={p.changeLang}
+        options={[
+          { value: "ru", label: "РУС" },
+          { value: "kk", label: "ҚАЗ" },
+        ]}
+      />
       <button
         className="icon-button"
         aria-label={p.dark ? t("light") : t("dark")}
@@ -299,7 +299,11 @@ function Shell(p: ShellProps) {
           </div>
           {controls}
         </header>
-        <main className="main-content">
+        <motion.main
+          className="main-content"
+          initial={false}
+          animate={contentTransition}
+        >
           {p.loading ? (
             <Loading />
           ) : p.pathname === "/profile" ? (
@@ -322,7 +326,7 @@ function Shell(p: ShellProps) {
           ) : (
             <ErrorState message="404" retry={() => router.push("/dashboard")} />
           )}
-        </main>
+        </motion.main>
         <footer className="app-footer">© TALAN · {t("source")}</footer>
       </div>
     </div>
@@ -491,6 +495,7 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
     [courseId, setCourseId] = useState(""),
     [search, setSearch] = useState(""),
     [filter, setFilter] = useState("all");
+  const listTransition = useContentTransition(`${courseId}:${filter}`);
   function load() {
     setBusy(true);
     setFailure("");
@@ -600,21 +605,17 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
         <span className="muted">{t("pass")} ≥ 80%</span>
       </div>
       <div className="course-toolbar">
-        <div className="tabs">
-          {(["all", "open", "done"] as const).map((f) => (
-            <button
-              key={f}
-              className={filter === f ? "selected" : ""}
-              onClick={() => setFilter(f)}
-            >
-              {f === "all"
-                ? t("all")
-                : f === "open"
-                  ? t("available")
-                  : t("completed")}
-            </button>
-          ))}
-        </div>
+        <SlidingSwitch
+          className="tabs"
+          label={t("course")}
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: "all", label: t("all") },
+            { value: "open", label: t("available") },
+            { value: "done", label: t("completed") },
+          ]}
+        />
         <div className="search-field">
           <Search size={17} />
           <input
@@ -625,7 +626,11 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
           />
         </div>
       </div>
-      <div className="lesson-list">
+      <motion.div
+        className="lesson-list"
+        initial={false}
+        animate={listTransition}
+      >
         {!matches.length && <div className="empty-state">{t("noResults")}</div>}
         {matches.map((l, i) => (
           <div key={l.id}>
@@ -639,7 +644,7 @@ function Dashboard({ me, mode }: { me: Me; mode: string }) {
             <LessonRow lesson={l} />
           </div>
         ))}
-      </div>
+      </motion.div>
       <p className="muted fine-print">{t("curriculumHelp")}</p>
     </div>
   );

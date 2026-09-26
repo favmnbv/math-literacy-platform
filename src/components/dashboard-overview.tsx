@@ -4,6 +4,7 @@ import { BookOpen, Check, Play, PencilLine } from "lucide-react";
 import type { LessonCard } from "@/lib/types";
 import { useApp } from "./context";
 import { Button } from "./ui/button";
+import { CourseProgress } from "./course-progress";
 import styles from "./dashboard-overview.module.css";
 
 export function DashboardOverview({
@@ -120,21 +121,7 @@ export function DashboardOverview({
             <span> / {lessons.length}</span>
           </strong>
         </p>
-        <div
-          className={styles.courseMarks}
-          role="img"
-          aria-label={`${t("completeCount")}: ${completed} / ${lessons.length}`}
-        >
-          {lessons.map((lesson) => (
-            <span
-              key={lesson.id}
-              className={
-                lesson.state === "COMPLETED" ? styles.completeMark : undefined
-              }
-              aria-hidden="true"
-            />
-          ))}
-        </div>
+        <CourseProgress lessons={lessons} />
         <dl className={styles.progressLedger}>
           <div>
             <dt>{t("viewCount")}</dt>

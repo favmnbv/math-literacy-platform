@@ -9,3 +9,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 <!-- END:nextjs-agent-rules -->
 
 For any frontend/UI work, first read skills/skills/frontend-design/SKILL.md and follow it.
+
+After every commit and push, refresh the repository in the user's VS Code window by opening this repository root with `code --reuse-window`. Preserve unsaved editor changes; never reset or overwrite them.

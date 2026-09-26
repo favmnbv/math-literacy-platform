@@ -144,24 +144,6 @@
   color: var(--muted);
   font-size: var(--type-body);
 }
-.courseMarks {
-  display: flex;
-  gap: 3px;
-  align-items: end;
-  height: 30px;
-  margin: 14px 0 var(--space-6);
-}
-.courseMarks > span {
-  flex: 1;
-  min-width: 1px;
-  height: 12px;
-  background: var(--line);
-  border-radius: 1px;
-}
-.courseMarks .completeMark {
-  height: 26px;
-  background: var(--success);
-}
 .progressLedger {
   margin: 0;
   border-top: 1px solid var(--line);
