@@ -27,6 +27,19 @@ model User {
   lessonProgress     LessonProgress[]
   homeworkProgress   HomeworkProgress[]
   submissions        Submission[]
+  assignedStudents   CuratorStudent[] @relation("CuratorAssignments")
+  assignedCurators   CuratorStudent[] @relation("StudentAssignments")
+}
+
+model CuratorStudent {
+  curatorId String
+  studentId String
+  curator User @relation("CuratorAssignments", fields: [curatorId], references: [id], onDelete: Cascade)
+  student User @relation("StudentAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([curatorId, studentId])
+  @@index([studentId])
 }
 
 model Session {

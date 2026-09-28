@@ -2,7 +2,6 @@ import { config } from "dotenv";
 import {
   existsSync,
   writeFileSync,
-  readFileSync,
   mkdirSync,
   openSync,
   closeSync,
@@ -13,6 +12,7 @@ import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
+import { migrateLocal } from "./migrate-local.mjs";
 
 const mode = process.argv[2] || "dev";
 if (!existsSync(".env"))
@@ -57,13 +57,7 @@ try {
       );
     }
     database = await PGlite.create(dataPath);
-    const { rows } = await database.query(
-      `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='User') AS exists`,
-    );
-    if (!rows[0].exists)
-      await database.exec(
-        readFileSync("prisma/migrations/0001_init/migration.sql", "utf8"),
-      );
+    await migrateLocal(database, resolve("prisma/migrations"));
     if (mode === "setup") {
       console.log("Local database and .env ready.");
       await shutdown();

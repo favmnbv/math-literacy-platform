@@ -19,13 +19,17 @@ import type {
   Issued,
   Editor,
   EditableQuestion,
+  Me,
 } from "@/lib/types";
+import { isSuperAdmin } from "@/lib/roles";
 import { Button } from "./ui/button";
 import { useApp } from "./context";
 import { Loading, ErrorState, Stat } from "./portal";
 import { MathText } from "./math-text";
+import { AdminOverview } from "./admin-overview";
+import { Staff } from "./staff";
 
-export function Admin({ pathname }: { pathname: string }) {
+export function Admin({ pathname, me }: { pathname: string; me: Me }) {
   const { t, error } = useApp();
   const [data, setData] = useState<Overview | null>(null),
     [failed, setFailed] = useState("");
@@ -42,11 +46,22 @@ export function Admin({ pathname }: { pathname: string }) {
   }, [pathname]);
   if (failed) return <ErrorState message={failed} retry={load} />;
   if (!data) return <Loading />;
+  if (pathname === "/admin/staff")
+    return isSuperAdmin(me.role) ? (
+      <Staff me={me} />
+    ) : (
+      <ErrorState
+        message={error(new Error("FORBIDDEN"))}
+        retry={() => window.location.assign("/admin")}
+      />
+    );
   if (pathname.startsWith("/admin/lesson/"))
     return <LessonEditor id={pathname.split("/")[3]} />;
   if (pathname === "/admin/students") return <Students overview={data} />;
   if (pathname === "/admin/groups")
     return <Groups overview={data} refresh={load} />;
+  if (pathname === "/admin")
+    return <AdminOverview data={data} curator={!isSuperAdmin(me.role)} />;
   return (
     <>
       <div className="page-heading">
@@ -147,7 +162,7 @@ export function Admin({ pathname }: { pathname: string }) {
     </>
   );
 }
-function Credentials({
+export function Credentials({
   rows,
   onClose,
 }: {
@@ -202,7 +217,7 @@ function Credentials({
   );
 }
 function Students({ overview }: { overview: Overview }) {
-  const { t, error, notify, date } = useApp();
+  const { t, error, notify, date, lang } = useApp();
   const [rows, setRows] = useState<StudentRow[]>([]),
     [total, setTotal] = useState(0),
     [page, setPage] = useState(1),
@@ -211,6 +226,7 @@ function Students({ overview }: { overview: Overview }) {
     [showCreate, setShowCreate] = useState(false),
     [issued, setIssued] = useState<Issued[]>([]),
     [csv, setCsv] = useState(""),
+    [importGroup, setImportGroup] = useState(""),
     [preview, setPreview] = useState<
       | {
           row: number;
@@ -472,9 +488,42 @@ function Students({ overview }: { overview: Overview }) {
       <details className="panel import-panel">
         <summary>{t("import")}</summary>
         <p className="muted">{t("csvHint")}</p>
+        <label>
+          {lang === "ru" ? "Группа для импорта" : "Импортқа арналған топ"}
+          <select
+            value={importGroup}
+            aria-label={
+              lang === "ru" ? "Группа для импорта" : "Импортқа арналған топ"
+            }
+            disabled={busy}
+            onChange={(e) => {
+              setImportGroup(e.target.value);
+              setPreview(null);
+            }}
+          >
+            <option value="">
+              {lang === "ru"
+                ? "Брать группу из столбца cohortId"
+                : "Топты cohortId бағанынан алу"}
+            </option>
+            {overview.cohorts.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {importGroup && (
+          <p className="muted">
+            {lang === "ru"
+              ? "Все ученики из файла попадут в выбранную группу. Столбец cohortId не нужен."
+              : "Файлдағы барлық оқушылар таңдалған топқа қосылады. cohortId бағаны қажет емес."}
+          </p>
+        )}
         <input
           type="file"
           accept=".csv,text/csv"
+          disabled={busy}
           aria-label={t("import")}
           onChange={async (e) => {
             const file = e.target.files?.[0];
@@ -490,7 +539,12 @@ function Students({ overview }: { overview: Overview }) {
           onClick={async () => {
             setBusy(true);
             try {
-              setPreview(await api("importPreview", { csv }));
+              setPreview(
+                await api("importPreview", {
+                  csv,
+                  ...(importGroup ? { cohortId: importGroup } : {}),
+                }),
+              );
             } catch (e) {
               notify(error(e));
             } finally {
@@ -517,7 +571,11 @@ function Students({ overview }: { overview: Overview }) {
                     <tr key={r.row}>
                       <td>{r.row}</td>
                       <td>{r.name}</td>
-                      <td>{r.cohortId}</td>
+                      <td>
+                        {overview.cohorts.find(
+                          (group) => group.id === r.cohortId,
+                        )?.name || r.cohortId}
+                      </td>
                       <td>{r.error || "✓"}</td>
                     </tr>
                   ))}
@@ -532,7 +590,10 @@ function Students({ overview }: { overview: Overview }) {
                   const result = await api<{
                     created: Issued[];
                     failed: { row: number; name: string; error: string }[];
-                  }>("importCommit", { csv });
+                  }>("importCommit", {
+                    csv,
+                    ...(importGroup ? { cohortId: importGroup } : {}),
+                  });
                   setIssued(result.created);
                   setPreview(
                     result.failed.length

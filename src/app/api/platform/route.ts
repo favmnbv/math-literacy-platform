@@ -8,6 +8,8 @@ import {
   HttpError,
   currentUser,
   requireAdmin,
+  requireStudentAccess,
+  studentScope,
   catalog,
   lessonView,
   access,
@@ -21,6 +23,13 @@ import {
   audit,
   questionSchema,
 } from "@/lib/platform";
+import {
+  staffList,
+  assignmentList,
+  createStaff,
+  assignStudent,
+  updateStaff,
+} from "@/lib/staff";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const answersSchema = z
@@ -76,6 +85,21 @@ export async function GET(request: NextRequest) {
         await lessonView(user, z.string().min(1).parse(params.get("id"))),
       );
     if (action === "admin") return json(await adminOverview(user));
+    if (action === "staff") return json(await staffList(user));
+    if (action === "assignments")
+      return json(
+        await assignmentList(
+          user,
+          z.string().min(1).parse(params.get("curatorId")),
+          (params.get("q") || "").slice(0, 100),
+          z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(10000)
+            .parse(params.get("page") || 1),
+        ),
+      );
     if (action === "students")
       return json(
         await adminStudents(
@@ -91,8 +115,8 @@ export async function GET(request: NextRequest) {
       );
     if (action === "student") {
       requireAdmin(user);
-      const student = await db.user.findUnique({
-        where: { id: params.get("id") || "" },
+      const student = await db.user.findFirst({
+        where: { ...studentScope(user), id: params.get("id") || "" },
         select: {
           id: true,
           name: true,
@@ -169,6 +193,11 @@ export async function POST(request: NextRequest) {
         "lesson",
         "homework",
         "bonusAttempt",
+        "createStaff",
+        "assignStudent",
+        "staffRole",
+        "staffStatus",
+        "staffPassword",
       ])
       .parse(body.action);
     await limit(
@@ -233,10 +262,18 @@ export async function POST(request: NextRequest) {
         ),
       );
     requireAdmin(user);
+    if (action === "createStaff") return json(await createStaff(user, body));
+    if (action === "assignStudent")
+      return json(await assignStudent(user, body));
+    if (["staffRole", "staffStatus", "staffPassword"].includes(action))
+      return json(await updateStaff(user, action, body));
     if (action === "createStudent")
       return json(await createStudent(user, body));
     if (action === "importPreview" || action === "importCommit") {
-      const rows = await importPreview(z.string().max(100000).parse(body.csv));
+      const rows = await importPreview(
+        z.string().max(100000).parse(body.csv),
+        z.string().min(1).optional().parse(body.cohortId),
+      );
       if (action === "importPreview") return json(rows);
       if (rows.some((r) => r.error)) throw new HttpError(400, "IMPORT_ERRORS");
       // Each row is a bounded transaction; return partial results explicitly so a retry cannot hide duplicates.
@@ -255,8 +292,7 @@ export async function POST(request: NextRequest) {
       const v = z
         .object({ id: z.string(), status: z.enum(["ACTIVE", "BLOCKED"]) })
         .parse(body);
-      const student = await db.user.findUnique({ where: { id: v.id } });
-      if (student?.role !== "STUDENT") throw new HttpError(403, "FORBIDDEN");
+      await requireStudentAccess(user, v.id);
       await db.$transaction([
         db.user.update({ where: { id: v.id }, data: { status: v.status } }),
         db.session.deleteMany({ where: { userId: v.id } }),
@@ -268,6 +304,10 @@ export async function POST(request: NextRequest) {
       const v = z
         .object({ id: z.string(), status: z.enum(["ACTIVE", "REVOKED"]) })
         .parse(body);
+      const enrollment = await db.enrollment.findFirst({
+        where: { id: v.id, user: studentScope(user) },
+      });
+      if (!enrollment) throw new HttpError(403, "FORBIDDEN");
       await db.enrollment.update({
         where: { id: v.id },
         data: { status: v.status },
@@ -277,8 +317,7 @@ export async function POST(request: NextRequest) {
     }
     if (action === "resetPassword") {
       const id = z.string().parse(body.id);
-      const student = await db.user.findUnique({ where: { id } });
-      if (student?.role !== "STUDENT") throw new HttpError(403, "FORBIDDEN");
+      const student = await requireStudentAccess(user, id);
       const password = randomBytes(12).toString("base64url");
       await db.$transaction([
         db.account.updateMany({
@@ -391,6 +430,7 @@ export async function POST(request: NextRequest) {
       const v = z
         .object({ userId: z.string(), homeworkId: z.string() })
         .parse(body);
+      await requireStudentAccess(user, v.userId);
       await db.homeworkProgress.update({
         where: { userId_homeworkId: v },
         data: { bonusAttempts: { increment: 1 } },

@@ -6,6 +6,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import Papa from "papaparse";
+import { isAdmin, isSuperAdmin } from "./roles";
 
 export class HttpError extends Error {
   constructor(
@@ -24,7 +25,26 @@ export async function currentUser(headers: Headers) {
   return user;
 }
 export function requireAdmin(user: User) {
-  if (user.role !== "ADMIN") throw new HttpError(403, "FORBIDDEN");
+  if (!isAdmin(user.role)) throw new HttpError(403, "FORBIDDEN");
+}
+export function requireSuperAdmin(user: User) {
+  if (!isSuperAdmin(user.role)) throw new HttpError(403, "FORBIDDEN");
+}
+export function studentScope(user: User): Prisma.UserWhereInput {
+  requireAdmin(user);
+  return {
+    role: "STUDENT",
+    ...(!isSuperAdmin(user.role)
+      ? { assignedCurators: { some: { curatorId: user.id } } }
+      : {}),
+  };
+}
+export async function requireStudentAccess(user: User, id: string) {
+  const student = await db.user.findFirst({
+    where: { ...studentScope(user), id },
+  });
+  if (!student) throw new HttpError(403, "FORBIDDEN");
+  return student;
 }
 export async function limit(key: string, max: number, seconds = 60) {
   const now = new Date();
@@ -445,6 +465,9 @@ export async function createStudent(admin: User, raw: unknown) {
       enrollments: {
         create: { courseId: cohort.courseId, cohortId: cohort.id },
       },
+      ...(!isSuperAdmin(admin.role)
+        ? { assignedCurators: { create: { curatorId: admin.id } } }
+        : {}),
     },
   });
   await audit(admin, "CREATE_STUDENT", id);
@@ -453,16 +476,16 @@ export async function createStudent(admin: User, raw: unknown) {
 export async function audit(admin: User, action: string, entityId: string) {
   await db.auditLog.create({ data: { adminId: admin.id, action, entityId } });
 }
-export async function importPreview(csv: string) {
+export async function importPreview(csv: string, selectedCohortId?: string) {
   const parsed = Papa.parse<Record<string, string>>(csv, {
     header: true,
     skipEmptyLines: "greedy",
     transformHeader: (h) => h.trim().replace(/^\uFEFF/, ""),
   });
   if (
-    parsed.errors.length ||
+    parsed.errors.some((error) => error.code !== "UndetectableDelimiter") ||
     !parsed.meta.fields?.includes("name") ||
-    !parsed.meta.fields?.includes("cohortId")
+    (!selectedCohortId && !parsed.meta.fields?.includes("cohortId"))
   )
     throw new HttpError(400, "INVALID_CSV");
   if (parsed.data.length > 100) throw new HttpError(400, "IMPORT_BATCH_LIMIT");
@@ -475,7 +498,7 @@ export async function importPreview(csv: string) {
     const row = parsed.data[index];
     const value = {
       name: row.name,
-      cohortId: row.cohortId,
+      cohortId: selectedCohortId || row.cohortId?.trim(),
       username: row.username?.trim() || undefined,
     };
     let error = studentSchema.safeParse(value).success ? "" : "INVALID_ROW";
@@ -493,6 +516,7 @@ export async function importPreview(csv: string) {
 }
 export async function adminOverview(user: User) {
   requireAdmin(user);
+  const scope = studentScope(user);
   const [
     students,
     active,
@@ -503,18 +527,22 @@ export async function adminOverview(user: User) {
     courses,
     lessons,
   ] = await Promise.all([
-    db.user.count({ where: { role: "STUDENT" } }),
+    db.user.count({ where: scope }),
     db.user.count({
       where: {
-        role: "STUDENT",
+        ...scope,
         lastActivityAt: { gte: new Date(Date.now() - 7 * 86400000) },
       },
     }),
-    db.submission.count(),
-    db.homeworkProgress.count({ where: { passedAt: { not: null } } }),
-    db.submission.aggregate({ _avg: { score: true } }),
+    db.submission.count({ where: { user: scope } }),
+    db.homeworkProgress.count({
+      where: { user: scope, passedAt: { not: null } },
+    }),
+    db.submission.aggregate({ where: { user: scope }, _avg: { score: true } }),
     db.cohort.findMany({
-      include: { _count: { select: { enrollments: true } } },
+      include: {
+        _count: { select: { enrollments: { where: { user: scope } } } },
+      },
       orderBy: { name: "asc" },
     }),
     db.course.findMany(),
@@ -525,7 +553,12 @@ export async function adminOverview(user: User) {
           select: {
             id: true,
             status: true,
-            _count: { select: { questions: true, submissions: true } },
+            _count: {
+              select: {
+                questions: true,
+                submissions: { where: { user: scope } },
+              },
+            },
           },
         },
       },
@@ -545,7 +578,7 @@ export async function adminOverview(user: User) {
 export async function adminStudents(user: User, search: string, page: number) {
   requireAdmin(user);
   const where: Prisma.UserWhereInput = {
-    role: "STUDENT",
+    ...studentScope(user),
     ...(search
       ? {
           OR: [

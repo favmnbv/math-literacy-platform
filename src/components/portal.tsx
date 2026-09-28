@@ -31,6 +31,7 @@ import { AppContext, useApp } from "./context";
 import { api } from "@/lib/client";
 import type { CourseView, Me, LessonCard } from "@/lib/types";
 import type { Lang } from "@/lib/i18n";
+import { isAdmin, isSuperAdmin } from "@/lib/roles";
 import { Lesson } from "./student-lesson";
 import { Admin } from "./admin";
 import { DashboardOverview } from "./dashboard-overview";
@@ -68,9 +69,9 @@ export function Portal() {
         else if (
           pathname === "/" ||
           pathname === "/login" ||
-          (pathname === "/dashboard" && u.role === "ADMIN")
+          (pathname === "/dashboard" && isAdmin(u.role))
         )
-          router.replace(u.role === "ADMIN" ? "/admin" : "/dashboard");
+          router.replace(isAdmin(u.role) ? "/admin" : "/dashboard");
       })
       .catch(() => {
         if (cancelled) return;
@@ -157,13 +158,22 @@ function Shell(p: ShellProps) {
       </button>
     </div>
   );
-  const admin = p.me?.role === "ADMIN";
+  const admin = isAdmin(p.me?.role);
   const links = admin
     ? [
         { href: "/admin", icon: LayoutDashboard, label: t("dashboard") },
         { href: "/admin/students", icon: Users, label: t("students") },
         { href: "/admin/groups", icon: CalendarDays, label: t("groups") },
         { href: "/admin/course", icon: BookOpen, label: t("lessons") },
+        ...(isSuperAdmin(p.me?.role)
+          ? [
+              {
+                href: "/admin/staff",
+                icon: Users,
+                label: p.lang === "ru" ? "Администраторы" : "Әкімшілер",
+              },
+            ]
+          : []),
         { href: "/profile", icon: UserRound, label: t("profile") },
       ]
     : [
@@ -283,7 +293,7 @@ function Shell(p: ShellProps) {
             <Profile me={p.me} onRefresh={p.onRefresh} />
           ) : p.pathname.startsWith("/admin") ? (
             admin ? (
-              <Admin pathname={p.pathname} />
+              <Admin pathname={p.pathname} me={p.me} />
             ) : (
               <ErrorState
                 message={t("loginError")}

@@ -60,7 +60,7 @@ async function main() {
   if (demo) {
     const issued = [];
     for (const [username, name, role, langs] of [
-      ["admin", "Администратор Талан", "ADMIN", []],
+      ["admin", "Суперадминистратор Талан", "SUPER_ADMIN", []],
       ["student.ru", "Ученик · пробный доступ", "STUDENT", ["ru"]],
       ["student.kk", "Оқушы · сынақ қолжетімділігі", "STUDENT", ["kk"]],
     ] as const) {

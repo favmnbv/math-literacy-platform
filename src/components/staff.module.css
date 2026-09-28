@@ -1,0 +1,209 @@
+.heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.heading h1 {
+  font-family: var(--font-display);
+  font-size: var(--type-title);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+.heading p,
+.hint {
+  font-size: var(--type-small);
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 65ch;
+  margin-top: 12px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+.member {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+  margin-bottom: 16px;
+}
+.member[data-selected="true"] {
+  border-color: var(--accent);
+}
+.memberHeading {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+}
+.memberHeading > svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--muted);
+}
+.memberHeading > div {
+  flex: 1;
+  min-width: 0;
+}
+.memberHeading h2 {
+  font-size: 16px;
+  font-weight: 550;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.memberHeading h2 small {
+  font-weight: 400;
+  color: var(--muted);
+}
+.memberHeading p,
+.status,
+.role {
+  font-size: var(--type-caption);
+  color: var(--muted);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.role {
+  margin: 16px 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.actions button {
+  white-space: normal;
+  text-align: left;
+}
+.assignments {
+  border-top: 2px solid var(--accent);
+  padding-top: 24px;
+  min-width: 0;
+}
+.assignments h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.search {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  margin: 24px 0;
+}
+.search svg {
+  flex: none;
+  color: var(--muted);
+}
+.search input {
+  margin: 0;
+  min-width: 0;
+}
+.students {
+  list-style: none;
+}
+.students li {
+  border-bottom: 1px solid var(--line);
+}
+.students label {
+  display: flex;
+  flex-direction: row;
+  text-align: left;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 8px;
+  margin: 0;
+  cursor: pointer;
+  transition: background var(--duration-state) var(--ease-response);
+}
+.students label:hover {
+  background: var(--surface-soft);
+}
+.students input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  flex: none;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.students strong {
+  display: block;
+  font-size: var(--type-small);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.students small {
+  display: block;
+  font-size: var(--type-caption);
+  color: var(--muted);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  font-size: var(--type-caption);
+}
+.create {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+}
+.create label {
+  margin: 0;
+  min-width: 0;
+}
+.create button {
+  align-self: end;
+}
+.create p {
+  grid-column: 1 / -1;
+  font-size: var(--type-caption);
+  color: var(--muted);
+}
+.page input:focus-visible,
+.page select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+.message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  color: var(--danger);
+  margin-bottom: 24px;
+}
+@media (max-width: 1050px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 550px) {
+  .create {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .member {
+    padding: 16px;
+  }
+  .status {
+    max-width: 75px;
+  }
+}

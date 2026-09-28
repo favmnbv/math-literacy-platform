@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, LoaderCircle } from "lucide-react";
 import type { Me } from "@/lib/types";
+import { isAdmin, isSuperAdmin } from "@/lib/roles";
 import { api } from "@/lib/client";
 import { useApp } from "./context";
 import { Button } from "./ui/button";
@@ -31,11 +32,17 @@ export function Profile({ me, onRefresh }: { me: Me; onRefresh: () => void }) {
               {me.name[0]}
             </span>
             <p>
-              {me.role === "ADMIN"
-                ? t("admin")
-                : ru
-                  ? "Ученик TALAN"
-                  : "TALAN оқушысы"}
+              {isSuperAdmin(me.role)
+                ? ru
+                  ? "Суперадминистратор"
+                  : "Бас әкімші"
+                : isAdmin(me.role)
+                  ? ru
+                    ? "Администратор-куратор"
+                    : "Әкімші-куратор"
+                  : ru
+                    ? "Ученик TALAN"
+                    : "TALAN оқушысы"}
             </p>
             <h2 id="profile-name">{me.name}</h2>
             <dl>
@@ -88,7 +95,7 @@ export function Profile({ me, onRefresh }: { me: Me; onRefresh: () => void }) {
                 form.reset();
                 notify(t("passwordChanged"));
                 onRefresh();
-                router.push(me.role === "ADMIN" ? "/admin" : "/dashboard");
+                router.push(isAdmin(me.role) ? "/admin" : "/dashboard");
               } catch (e) {
                 notify(error(e));
               } finally {
