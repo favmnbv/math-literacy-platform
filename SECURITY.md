@@ -21,7 +21,15 @@
 - Existing student and administration flows are tested in both curricula. The separate permissions suite verifies two curators, direct-ID requests, assignment revocation, staff management and session invalidation.
 - Tracked files and Git history were checked against the existing local credentials and environment secrets; no matches were found. The GitHub repository was verified private.
 
-This is a source review and automated application test pass, not a certification or a guarantee of immunity. Local PGlite tests use one database connection; real multi-connection PostgreSQL concurrency, cloud configuration and HTTPS cookies must also be checked on the deployed environment. No destructive testing or flood testing is performed on the public service.
+Additional validation on 2026-09-29:
+
+- All three security browser/API tests passed against an isolated Neon PostgreSQL branch with a ten-connection pool. Five concurrent homework submissions accepted exactly three attempts; grading, temporary passwords, session revocation and throttling checks passed.
+- All three migrations, content seeding and administrator bootstrap were verified on that branch before applying them to production. Repeating bootstrap left the existing administrator unchanged.
+- Production contains two courses, 64 lessons, two homework sets and one initial superadmin with compulsory password change. No demo accounts were installed. Runtime uses a pooled Neon connection; migrations use the direct connection, both with explicit certificate verification.
+- Render uses the free plan, a frozen-lockfile build, a `/login` health check, a unique production authentication secret and HTTPS origin. Local `.env` and existing credentials were preserved; production credentials and cloud environment files remain Git-ignored.
+- Live HTTPS checks verified rotating script nonces, HSTS, Secure/HttpOnly/SameSite cookies, blocked private files, anonymous API restrictions, disabled registration, CSRF rejection and forced password change. Browser hydration and the first-login screen were inspected separately.
+
+This is a source review and automated application test pass, not a certification or a guarantee of immunity. No destructive testing or flood testing is performed on the public service. A 15-user load test and playback checks from students' networks remain separate acceptance tests.
 
 ## Release requirements
 
