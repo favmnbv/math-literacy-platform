@@ -5,6 +5,7 @@ export default defineConfig({
   migrations: { path: "prisma/migrations" },
   datasource: {
     url:
+      process.env.DATABASE_URL_UNPOOLED ||
       process.env.DATABASE_URL ||
       "postgresql://unused:unused@localhost:5432/talan",
   },
