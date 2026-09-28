@@ -11,3 +11,4 @@ test-results/
 *.log
 credentials.local.txt
 credentials-*.local.txt
+.neon

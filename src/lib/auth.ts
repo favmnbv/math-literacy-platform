@@ -3,6 +3,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { username } from "better-auth/plugins";
 import { compare, hash } from "bcryptjs";
 import { db } from "./db";
+import { validateProductionEnvironment } from "./http-security";
+validateProductionEnvironment();
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
   secret: process.env.BETTER_AUTH_SECRET,
@@ -14,7 +16,11 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     maxPasswordLength: 64,
     password: {
-      hash: (p) => hash(p, 12),
+      hash: (p) => {
+        if (Buffer.byteLength(p, "utf8") > 72)
+          throw new Error("Password exceeds bcrypt byte limit");
+        return hash(p, 12);
+      },
       verify: ({ hash: h, password }) => compare(password, h),
     },
   },
@@ -29,14 +35,19 @@ export const auth = betterAuth({
       maxUsernameLength: 40,
     }),
   ],
-  rateLimit: {
-    enabled: true,
-    storage: "database",
-    window: 60,
-    max: 60,
-    customRules: {
-      "/sign-in/username": { window: 60, max: 5 },
-      "/sign-in/email": { window: 60, max: 5 },
+  // The public route enforces atomic account and global database limits,
+  // independent of spoofable IP headers and shared school networks.
+  rateLimit: { enabled: false },
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const user = await db.user.findUnique({
+            where: { id: session.userId },
+          });
+          if (!user || user.status !== "ACTIVE") return false;
+        },
+      },
     },
   },
   user: {

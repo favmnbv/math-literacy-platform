@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { randomBytes } from "node:crypto";
 import { hash } from "bcryptjs";
+import { readJsonBody, requireSameOrigin } from "@/lib/http-security";
 import {
   HttpError,
   currentUser,
@@ -48,6 +49,8 @@ function failure(e: unknown) {
     return json({ error: "DUPLICATE_RECORD" }, 409);
   if ((e as { code?: string }).code === "P2025")
     return json({ error: "NOT_FOUND" }, 404);
+  if ((e as { code?: string }).code === "P2034")
+    return json({ error: "CONCURRENT_SUBMISSION" }, 409);
   console.error(
     "Platform request failed:",
     e instanceof Error ? e.name : "UnknownError",
@@ -59,6 +62,7 @@ export async function GET(request: NextRequest) {
     const user = await currentUser(request.headers),
       params = request.nextUrl.searchParams,
       action = params.get("action") || "me";
+    await limit(`${user.id}:read`, 180);
     if (action === "me")
       return json({
         id: user.id,
@@ -161,22 +165,9 @@ export async function GET(request: NextRequest) {
 }
 export async function POST(request: NextRequest) {
   try {
-    if (
-      request.headers.get("origin") !==
-      new URL(process.env.BETTER_AUTH_URL || "http://localhost:3000").origin
-    )
-      throw new HttpError(403, "INVALID_ORIGIN");
+    requireSameOrigin(request);
     const user = await currentUser(request.headers);
-    if (Number(request.headers.get("content-length") || 0) > 500000)
-      throw new HttpError(413, "TOO_LARGE");
-    const raw = await request.text();
-    if (raw.length > 500000) throw new HttpError(413, "TOO_LARGE");
-    let body;
-    try {
-      body = JSON.parse(raw);
-    } catch {
-      throw new HttpError(400, "INVALID_INPUT");
-    }
+    const body = await readJsonBody(request, 500000);
     const action = z
       .enum([
         "password",
@@ -207,8 +198,12 @@ export async function POST(request: NextRequest) {
     if (action === "password") {
       const value = z
         .object({
-          currentPassword: z.string(),
-          newPassword: z.string().min(12).max(64),
+          currentPassword: z.string().max(256),
+          newPassword: z
+            .string()
+            .min(12)
+            .max(64)
+            .refine((value) => Buffer.byteLength(value, "utf8") <= 72),
         })
         .parse(body);
       let changed: Response;

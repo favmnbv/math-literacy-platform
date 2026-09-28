@@ -3,6 +3,11 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 const globalDb = globalThis as unknown as { talanDb?: PrismaClient };
 function createDb() {
+  const poolSize = Number(
+    process.env.DATABASE_POOL_SIZE || (process.env.DATABASE_URL ? 10 : 1),
+  );
+  if (!Number.isInteger(poolSize) || poolSize < 1 || poolSize > 20)
+    throw new Error("DATABASE_POOL_SIZE must be an integer from 1 to 20.");
   if (
     !process.env.DATABASE_URL &&
     process.env.NODE_ENV === "production" &&
@@ -16,7 +21,7 @@ function createDb() {
       connectionString:
         process.env.DATABASE_URL ||
         "postgresql://postgres:postgres@127.0.0.1:54329/postgres",
-      max: process.env.DATABASE_URL ? 10 : 1,
+      max: poolSize,
       idleTimeoutMillis: 1000,
     }),
   });
