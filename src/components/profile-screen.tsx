@@ -8,6 +8,7 @@ import { isAdmin, isSuperAdmin } from "@/lib/roles";
 import { api } from "@/lib/client";
 import { useApp } from "./context";
 import { Button } from "./ui/button";
+import { PasswordInput } from "./ui/password-input";
 import styles from "./profile-screen.module.css";
 
 export function Profile({ me, onRefresh }: { me: Me; onRefresh: () => void }) {
@@ -103,27 +104,27 @@ export function Profile({ me, onRefresh }: { me: Me; onRefresh: () => void }) {
               }
             }}
           >
-            <label>
-              {t("currentPassword")}
-              <input
+            <div className={styles.passwordField}>
+              <label htmlFor="current-password">{t("currentPassword")}</label>
+              <PasswordInput
+                id="current-password"
                 name="currentPassword"
-                type="password"
                 autoComplete="current-password"
                 required
               />
-            </label>
-            <label>
-              {t("newPassword")}
-              <input
+            </div>
+            <div className={styles.passwordField}>
+              <label htmlFor="new-password">{t("newPassword")}</label>
+              <PasswordInput
+                id="new-password"
                 name="newPassword"
-                type="password"
                 autoComplete="new-password"
                 minLength={12}
                 maxLength={64}
                 required
                 aria-describedby="password-length"
               />
-            </label>
+            </div>
             <p id="password-length" className={styles.fieldHint}>
               {ru ? "От 12 до 64 символов." : "12–64 таңба."}
             </p>

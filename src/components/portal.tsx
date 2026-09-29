@@ -301,7 +301,7 @@ function Shell(p: ShellProps) {
               />
             )
           ) : p.pathname.startsWith("/course/") ? (
-            <Lesson id={p.pathname.split("/")[2]} />
+            <Lesson key={p.pathname} id={p.pathname.split("/")[2]} />
           ) : ["/dashboard", "/course", "/progress"].includes(p.pathname) ? (
             <Dashboard me={p.me} mode={p.pathname} />
           ) : (

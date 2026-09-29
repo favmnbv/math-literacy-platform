@@ -150,6 +150,12 @@
   background: var(--surface);
   border-radius: var(--radius-control);
 }
+.passwordField {
+  margin-bottom: var(--space-6);
+}
+.passwordField label {
+  margin-bottom: var(--space-2);
+}
 .form input:hover {
   border-color: var(--muted);
 }

@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Check,
-  ExternalLink,
   Send,
   Lock,
   BookOpen,
@@ -15,6 +14,7 @@ import {
 import { Button } from "./ui/button";
 import { SubmitDialog } from "./ui/submit-dialog";
 import { HomeworkResult } from "./homework-result";
+import { LessonVideo } from "./lesson-video";
 import { useApp } from "./context";
 import { MathText } from "./math-text";
 import { api } from "@/lib/client";
@@ -174,27 +174,11 @@ export function Lesson({ id }: { id: string }) {
           aria-labelledby="video-title"
         >
           <div className={styles.videoContent}>
-            <div className="video-frame">
-              <iframe
-                src={lesson.videoUrl}
-                title={`${t("lesson")} ${lesson.order}: ${lesson.title}`}
-                allow="autoplay; fullscreen; encrypted-media"
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-            <div className="video-caption">
-              <span>{t("videoHelp")}</span>
-              <a
-                href={lesson.videoExternalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t("videoExternal")}
-                <ExternalLink size={13} />
-              </a>
-            </div>
+            <LessonVideo
+              src={lesson.videoUrl}
+              externalUrl={lesson.videoExternalUrl}
+              title={`${t("lesson")} ${lesson.order}: ${lesson.title}`}
+            />
             {lesson.description && (
               <p className="lesson-description">{lesson.description}</p>
             )}
